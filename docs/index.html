@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel AIO — Controle de AIO (CGPAC)</title>
+<meta name="description" content="Controle das Autorizações de Início de Objeto (AIO) — MCID/SE/DMP/CGPAC">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/painel.css?v=1.0.0">
+</head>
+<body>
+
+<!-- Carregando -->
+<div id="carregando" class="login"><p class="muted">Carregando o Painel AIO…</p></div>
+
+<!-- Login -->
+<section id="tela-login" class="login oculto">
+  <form id="form-login" class="login-card" autocomplete="on">
+    <h1>Painel AIO</h1>
+    <p>MCID · SE · DMP · CGPAC — controle das Autorizações de Início de Objeto</p>
+    <label class="campo"><span>E-mail</span><input type="email" name="email" autocomplete="username" required></label>
+    <label class="campo"><span>Senha</span><input type="password" name="senha" autocomplete="current-password" required></label>
+    <button class="btn grande bloco" type="submit">Entrar</button>
+    <div class="erro" id="login-erro"></div>
+    <p class="pequeno muted" style="margin:14px 0 0">Esqueceu a senha ou ainda não tem acesso? Fale com o administrador do painel.</p>
+  </form>
+</section>
+
+<!-- Aplicação -->
+<div id="app" class="wrap oculto">
+  <header class="topo">
+    <div class="titulo">
+      <h1>Painel AIO</h1>
+      <p>MCID/SE/DMP/CGPAC · controle das Autorizações de Início de Objeto</p>
+    </div>
+    <div class="topo-dir">
+      <span id="vivo" class="vivo" title="Atualização em tempo real"><i></i><span>conectando…</span></span>
+      <button id="btn-versao" class="selo" type="button">Versão</button>
+      <div class="usuario">
+        <button id="btn-usuario" class="usuario-btn" type="button">…</button>
+        <div id="menu-usuario" class="menu oculto">
+          <button type="button" data-acao="senha">Trocar senha</button>
+          <button type="button" data-acao="sair">Sair</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="abas" id="abas">
+    <button class="aba ativa" data-aba="painel" type="button">Painel</button>
+    <button class="aba" data-aba="quadro" type="button">Quadro</button>
+    <button class="aba" data-aba="caixa" type="button">Listas da Caixa <span class="cont" id="cont-fila"></span></button>
+    <button class="aba" data-aba="atividade" type="button">Atividade</button>
+    <span class="espaco"></span>
+    <button class="btn" id="btn-novo" type="button">+ Novo AIO</button>
+  </nav>
+
+  <!-- Filtros (valem para Painel e Quadro) -->
+  <div id="bloco-filtros">
+    <section class="resumo" id="kpis"></section>
+    <section class="caixa-card" id="gargalo-card">
+      <h3>AIOs por momento <small>clique numa barra para filtrar · número pequeno = média de dias no momento</small></h3>
+      <div class="gbars" id="gargalo"></div>
+    </section>
+    <div class="filtros" id="filtros">
+      <input class="inp busca" id="f-texto" type="search" placeholder="Buscar instrumento, operação, processo SEI, município, proponente…">
+      <select class="inp" id="f-resp"><option value="">Todos os responsáveis</option></select>
+      <select class="inp" id="f-sec"><option value="">Todas as secretarias</option></select>
+      <select class="inp" id="f-tipo">
+        <option value="">Emissão e convalidação</option>
+        <option value="EMISSAO">Emissão</option>
+        <option value="CONVALIDACAO">Convalidação</option>
+        <option value="-">Tipo não informado</option>
+      </select>
+      <select class="inp" id="f-conv">
+        <option value="">Lista de convalidação: todos</option>
+        <option value="sim">Na lista de convalidação da Caixa</option>
+        <option value="nao">Fora da lista de convalidação</option>
+      </select>
+      <select class="inp" id="f-estr">
+        <option value="">Etapa única e em etapas</option>
+        <option value="unica">Etapa única</option>
+        <option value="etapas">Contratos em etapas</option>
+      </select>
+      <button class="chip danger" id="f-atr" type="button">Só atrasados</button>
+      <button class="chip" id="f-meus" type="button">Meus</button>
+      <button class="chip" id="f-concl" type="button">Ocultar concluídos</button>
+      <button class="lnk pequeno" id="f-limpar" type="button">limpar filtros</button>
+    </div>
+  </div>
+
+  <main>
+    <section id="aba-painel">
+      <div class="filtro-info">
+        <span id="info-lista"></span>
+        <div class="acoes">
+          <select class="inp" id="ordem" style="width:auto">
+            <option value="dias">Mais tempo no momento</option>
+            <option value="momento">Momento</option>
+            <option value="instrumento">Instrumento</option>
+            <option value="recentes">Alterados recentemente</option>
+            <option value="valor">Maior valor</option>
+          </select>
+          <button class="btn sec" id="btn-csv" type="button">CSV</button>
+          <button class="btn sec" id="btn-xlsx" type="button">Excel</button>
+        </div>
+      </div>
+      <div class="lista" id="lista"></div>
+    </section>
+
+    <section id="aba-quadro" class="oculto">
+      <div class="quadro" id="quadro"></div>
+    </section>
+
+    <section id="aba-caixa" class="oculto">
+      <div class="caixa-card">
+        <h3>Importar lista da Caixa <small>arquivo .xlsx do e-mail · o painel acha sozinho as tabelas e casa pelo instrumento/operação</small></h3>
+        <div class="acoes-linha">
+          <input type="file" id="arq-caixa" accept=".xlsx,.xls">
+        </div>
+        <div id="previa-caixa"></div>
+      </div>
+      <div class="caixa-card">
+        <h3>Na lista da Caixa e ainda sem cadastro <small id="fila-info"></small></h3>
+        <div id="fila"></div>
+      </div>
+      <div class="caixa-card">
+        <h3>Listas importadas</h3>
+        <div id="listas"></div>
+      </div>
+    </section>
+
+    <section id="aba-atividade" class="oculto">
+      <div class="caixa-card">
+        <h3>Últimas alterações <small>quem mudou o quê</small></h3>
+        <div id="atividade"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="rodape"></footer>
+</div>
+
+<div id="gaveta-raiz"></div>
+<div id="modal-raiz"></div>
+
+<script type="module" src="js/app.js?v=1.0.0"></script>
+</body>
+</html>

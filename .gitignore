@@ -1,0 +1,14 @@
+# segredos
+config.env
+*.pem
+# dados (operacionais — não vão para o GitHub)
+*.xlsx
+*.xls
+seed/
+relatorios/
+# ambiente
+.venv/
+__pycache__/
+.DS_Store
+# lista da equipe (e-mails)
+sql/05b_equipe.sql

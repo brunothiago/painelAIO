@@ -1,0 +1,31 @@
+{
+  "_leia": "Mapa de cabeçalhos das listas da Caixa → campos do banco. Usado pelo upload no painel (caixa.js) e pelo script python/02_importar_lista_caixa.py. Os cabeçalhos são comparados sem acento, em minúsculas e sem '?' no fim. Para uma coluna nova da Caixa, acrescente o nome aqui.",
+  "cabecalho_obrigatorio": "operacao",
+  "campos": {
+    "nr_operacao":     ["operacao"],
+    "nr_proposta":     ["proposta"],
+    "nr_instrumento":  ["instrumento", "convenio"],
+    "siarg":           ["siarg"],
+    "recebedor":       ["recebedor", "tomador"],
+    "uf":              ["uf"],
+    "tipologia":       ["tipologia", "programa"],
+    "etapa":           ["etapa"],
+    "valor":           ["valor repasse", "valor etapa"],
+    "dt_envio":        ["envio", "data envio gestor"],
+    "dt_autorizacao":  ["autorizacao", "data autorizacao gestor"],
+    "dt_pendencia":    ["pendencia"],
+    "dt_devolucao":    ["devolucao"],
+    "situacao":        ["situacao"],
+    "execucao_etapas": ["execucao em etapas"],
+    "passou_cgpac":    ["aio passou pela cgpac", "passou pela dmp-cgpac"],
+    "obs_mcid":        ["observacoes mcid", "observacoes"]
+  },
+  "tipos": {
+    "valor": "numero",
+    "dt_envio": "data",
+    "dt_autorizacao": "data",
+    "dt_pendencia": "data",
+    "dt_devolucao": "data",
+    "execucao_etapas": "simnao"
+  }
+}
