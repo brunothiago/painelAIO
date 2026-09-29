@@ -73,6 +73,8 @@ Navegador (equipe) ── login ──► Supabase (banco na nuvem, login, tempo
    6. `05b_equipe.sql`, depois de conferir os e-mails. Esse arquivo fica só no seu Mac e não vai para o GitHub
    7. `06_realtime.sql`
    8. `99_testes.sql`: tem que terminar com **TODOS OS TESTES PASSARAM**
+
+   Se algum SQL de 01 a 03 for rodado de novo (por exemplo, numa atualização), rode também o `04_rls.sql` logo depois. Recriar tabelas ou visões devolve ao visitante sem login a permissão padrão do Supabase, e o teste 1 do `99_testes.sql` falha.
 3. **Authentication › Sign In / Providers**: desligue **Allow new users to sign up**. Deixe só o e-mail ligado.
 4. **Authentication › Users › Add user › Create new user**:
    - um usuário para cada pessoa da tabela `perfil`, com o mesmo e-mail;
