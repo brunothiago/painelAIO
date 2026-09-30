@@ -11,6 +11,9 @@ from comum import as_date, as_num, cfg, norm_instrumento, norm_txt, parse_etapas
 
 ABA_PADRAO = "AIOs a partir de julho de 2026"
 
+# login da planilha -> login do e-mail, quando forem diferentes
+LOGIN_EMAIL = {"amanda.cunha": "amanda.duque"}
+
 # cabeçalho normalizado (início do texto) -> chave interna
 COLUNAS = {
     "id": "id", "processo": "processo", "responsavel": "responsavel", "fase do pac": "fase_pac",
@@ -127,7 +130,7 @@ def converter(r, hoje=None):
         "tipo": tipo(r.get("tipo")),
         "momento": cod,
         "momento_desde": data.isoformat(),
-        "responsavel": f"{login}@{dominio}" if login else None,
+        "responsavel": f"{LOGIN_EMAIL.get(login, login)}@{dominio}" if login else None,
         "processo_sei": texto(r.get("processo")),
         "valor_solicitado": as_num(r.get("valor")),
         "dt_solicitacao_caixa": _iso(r.get("dt_solicitacao")),
