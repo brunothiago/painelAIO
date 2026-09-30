@@ -46,6 +46,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("prefixos", nargs="*", help="ex.: 01 03 05b (padrão: 01 a 06)")
     ap.add_argument("--commit", action="store_true")
+    ap.add_argument("--banco", default="SUPABASE_DB_URL",
+                    help="variável do config.env com o endereço (ex.: SUPABASE_DB_URL_NOVO)")
     args = ap.parse_args()
 
     lista = arquivos(args.prefixos or PADRAO)
@@ -55,7 +57,8 @@ def main():
         return
 
     import psycopg2
-    url = cfg("SUPABASE_DB_URL", obrigatorio=True)
+    url = cfg(args.banco, obrigatorio=True)
+    print(f"Banco: {args.banco}")
     conn = psycopg2.connect(url, connect_timeout=15)
     conn.autocommit = True  # cada arquivo controla a própria transação (o 99 faz rollback)
     cur = conn.cursor()
