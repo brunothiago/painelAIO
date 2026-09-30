@@ -4,6 +4,13 @@ import { $, html, render } from './util.js';
 
 export const VERSOES = [
   {
+    v: '1.2.0', data: '30/09/2026', itens: [
+      'Cada campo tem uma letra, como no Excel (A = Nº AIO, B = Instrumento…), igual à coluna da planilha exportada.',
+      'As letras aparecem no preenchimento do AIO, no cadastro de AIO novo, nos dados do MCID e no cabeçalho da lista.',
+      'Botão "Mapa de colunas" com a lista completa (A até AZ). A exportação ganhou fase do PAC, referência da solicitação, saldo, desbloqueio, e-mail GEPAC07 e valor de repasse.',
+    ],
+  },
+  {
     v: '1.1.0', data: '30/09/2026', itens: [
       'Nº sequencial de cada AIO (AIO nº 1, 2, 3…), igual à coluna ID da planilha para os AIOs da carga inicial; os novos recebem o próximo nº.',
       'Busca pelo nº: digite 12 (ou #12) e aperte Enter para abrir o AIO nº 12. Ordenação por nº.',

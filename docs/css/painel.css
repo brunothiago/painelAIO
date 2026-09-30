@@ -161,6 +161,12 @@ header.topo{display:flex;align-items:flex-end;justify-content:space-between;gap:
 .saci{font-size:.7rem;font-weight:700;color:var(--azul);text-decoration:none;border:1px solid var(--azul);border-radius:12px;padding:0 8px;white-space:nowrap}
 .saci:hover{background:var(--azul);color:#fff}
 
+/* selo da letra da coluna (igual à planilha exportada) */
+.letra{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:17px;padding:0 4px;margin-right:5px;
+  border-radius:4px;background:#E8EEF8;color:var(--azul);border:1px solid var(--azul-claro);font-family:ui-monospace,Menlo,monospace;
+  font-size:.66rem;font-weight:700;letter-spacing:0;text-transform:none;vertical-align:1px}
+.lcab .letra{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)}
+
 /* ---------- Kanban ---------- */
 .quadro{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,1fr);gap:12px;overflow-x:auto;padding-bottom:8px}
 .coluna{background:#E8EBF0;border-radius:var(--raio);padding:10px;min-height:200px}

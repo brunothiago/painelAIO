@@ -1,6 +1,7 @@
 // "Novo AIO": buscar o instrumento nos dados já conhecidos e iniciar o cadastro
 // com os campos pré-preenchidos.
 import { E, DESVIOS, PRINCIPAIS, nomePessoa, pilulaMomento, rotuloAio } from './estado.js';
+import { rotuloComLetra } from './campos.js';
 import { $, $$, debounce, fmtData, fmtEtapas, hojeISO, html, msgErro, parseEtapas, raw, render, toast } from './util.js';
 import { abrirDetalhe } from './detalhe.js';
 
@@ -146,27 +147,27 @@ function formulario(pre) {
             <div><span>Município</span>${c.municipio || '—'}${c.uf ? `/${c.uf}` : ''}</div><div><span>Proponente</span>${c.proponente || '—'}</div>
             <div style="grid-column:1/-1"><span>Objeto</span>${c.descricao || '—'}</div></div>
           ${doContrato.length ? html`<p class="pequeno" style="margin-top:10px">AIOs já cadastrados: ${doContrato.map((a) => html`<span style="margin-right:8px">${rotuloAio(a)} · etapa ${fmtEtapas(a.etapas)} ${pilulaMomento(a.momento)}</span>`)}</p>` : ''}`
-        : html`<div class="grade">${CAMPOS_CONTRATO.map(([k, rot]) => html`<label class="campo"><span>${rot}</span><input type="text" name="c_${k}" value="${c[k] ?? ''}"></label>`)}
-            <label class="campo" style="grid-column:1/-1"><span>Descrição do objeto</span><textarea name="c_descricao">${c.descricao || ''}</textarea></label></div>`}
+        : html`<div class="grade">${CAMPOS_CONTRATO.map(([k, rot]) => html`<label class="campo"><span>${rotuloComLetra(k, rot)}</span><input type="text" name="c_${k}" value="${c[k] ?? ''}"></label>`)}
+            <label class="campo" style="grid-column:1/-1"><span>${rotuloComLetra('descricao')}</span><textarea name="c_descricao">${c.descricao || ''}</textarea></label></div>`}
       </section>
       <section class="sec">
         <h4>AIO</h4>
         <div class="grade">
-          <label class="campo"><span>Etapa(s) — "Única" ou nº, ex. "2 e 4"</span><input type="text" name="etapas" value="${fmtEtapas(s.etapas || [])}" required></label>
-          <label class="campo"><span>Tipo</span><select name="tipo">
+          <label class="campo"><span>${rotuloComLetra('etapas', 'Etapa(s) — "Única" ou nº, ex. "2 e 4"')}</span><input type="text" name="etapas" value="${fmtEtapas(s.etapas || [])}" required></label>
+          <label class="campo"><span>${rotuloComLetra('tipo', 'Tipo')}</span><select name="tipo">
             <option value="EMISSAO" ${s.tipo === 'EMISSAO' ? raw('selected') : ''}>Emissão de AIO</option>
             <option value="CONVALIDACAO" ${s.tipo === 'CONVALIDACAO' ? raw('selected') : ''}>Convalidação</option>
             <option value="" ${!s.tipo ? raw('selected') : ''}>Ainda não sei</option></select>
             ${s.motivoTipo ? html`<small class="muted">sugestão: ${s.motivoTipo}</small>` : ''}</label>
-          <label class="campo"><span>Responsável</span><select name="responsavel">${E.perfis.filter((p) => p.ativo).map((p) => html`<option value="${p.email}" ${p.email.toLowerCase() === (E.usuario || '').toLowerCase() ? raw('selected') : ''}>${p.nome || p.email}</option>`)}</select></label>
-          <label class="campo"><span>Valor solicitado (R$)</span><input type="number" step="0.01" min="0" name="valor_solicitado" value="${s.valor_solicitado ?? ''}"></label>
-          <label class="campo"><span>Solicitação da Caixa</span><input type="date" name="dt_solicitacao_caixa" value="${s.dt_solicitacao_caixa ? String(s.dt_solicitacao_caixa).slice(0, 10) : ''}" max="${hojeISO()}"></label>
-          ${existente ? html`<label class="campo"><span>Processo SEI (se diferente)</span><input type="text" name="processo_sei" value=""></label>` : ''}
-          <label class="campo" style="grid-column:1/-1"><span>Descrição da etapa</span><input type="text" name="etapa_descricao" value="${s.etapa_descricao || ''}"></label>
-          <label class="campo"><span>Momento inicial</span><select name="momento">
+          <label class="campo"><span>${rotuloComLetra('responsavel', 'Responsável')}</span><select name="responsavel">${E.perfis.filter((p) => p.ativo).map((p) => html`<option value="${p.email}" ${p.email.toLowerCase() === (E.usuario || '').toLowerCase() ? raw('selected') : ''}>${p.nome || p.email}</option>`)}</select></label>
+          <label class="campo"><span>${rotuloComLetra('valor_solicitado', 'Valor solicitado (R$)')}</span><input type="number" step="0.01" min="0" name="valor_solicitado" value="${s.valor_solicitado ?? ''}"></label>
+          <label class="campo"><span>${rotuloComLetra('dt_solicitacao_caixa', 'Solicitação da Caixa')}</span><input type="date" name="dt_solicitacao_caixa" value="${s.dt_solicitacao_caixa ? String(s.dt_solicitacao_caixa).slice(0, 10) : ''}" max="${hojeISO()}"></label>
+          ${existente ? html`<label class="campo"><span>${rotuloComLetra('processo_sei', 'Processo SEI (se diferente)')}</span><input type="text" name="processo_sei" value=""></label>` : ''}
+          <label class="campo" style="grid-column:1/-1"><span>${rotuloComLetra('etapa_descricao', 'Descrição da etapa')}</span><input type="text" name="etapa_descricao" value="${s.etapa_descricao || ''}"></label>
+          <label class="campo"><span>${rotuloComLetra('momento_nome', 'Momento inicial')}</span><select name="momento">
             <optgroup label="Fluxo">${princ.map((m) => html`<option value="${m.codigo}" ${m.codigo === 'RECEBIDO' ? raw('selected') : ''}>${m.nome}</option>`)}</optgroup>
             <optgroup label="Desvios">${DESVIOS().map((m) => html`<option value="${m.codigo}">${m.nome}</option>`)}</optgroup></select></label>
-          <label class="campo"><span>Desde</span><input type="date" name="momento_desde" value="${hojeISO()}" max="${hojeISO()}" required></label>
+          <label class="campo"><span>${rotuloComLetra('momento_desde', 'Desde')}</span><input type="date" name="momento_desde" value="${hojeISO()}" max="${hojeISO()}" required></label>
           <label class="campo" style="grid-column:1/-1"><span id="nv-obs-rot">Observação (opcional)</span><input type="text" name="obs_momento" maxlength="500"></label>
         </div>
         <div id="nv-aviso"></div>

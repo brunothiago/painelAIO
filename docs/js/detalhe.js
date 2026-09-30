@@ -1,6 +1,7 @@
 // Gaveta de detalhe do AIO: momento (com histórico), edição com trava otimista,
 // contrato, listas da Caixa, dados do MCID e etapas do mesmo contrato.
 import { E, DESVIOS, PRINCIPAIS, nomePessoa, pilulaMomento, rotuloAio, tagTipo } from './estado.js';
+import { COLUNAS, rotuloComLetra, selo } from './campos.js';
 import { $, $$, copiar, fmtBRL, fmtData, fmtDataHora, fmtEtapas, hojeISO, html, msgErro, parseEtapas, raw, render, toast } from './util.js';
 
 let atual = null;      // id do AIO aberto
@@ -44,6 +45,12 @@ const CAMPOS_CONTRATO = [
   { k: 'descricao', rot: 'Descrição do objeto', t: 'area', largo: true },
 ];
 
+// formulário na ordem das letras (A, B, C… como na planilha exportada)
+const POS = Object.fromEntries(COLUNAS.map(([k], i) => [k, i]));
+const porLetra = (lista) => lista.sort((x, y) => (POS[x.k] ?? 999) - (POS[y.k] ?? 999));
+porLetra(CAMPOS_AIO);
+porLetra(CAMPOS_CONTRATO);
+
 function campo(c, v) {
   const nome = `name="${c.k}"`;
   const val = v ?? '';
@@ -59,7 +66,7 @@ function campo(c, v) {
   else if (c.t === 'num') inp = html`<input type="number" step="0.01" min="0" ${raw(nome)} value="${val}">`;
   else if (c.t === 'etapas') inp = html`<input type="text" ${raw(nome)} value="${fmtEtapas(v)}">`;
   else inp = html`<input type="text" ${raw(nome)} value="${val}">`;
-  return html`<label class="campo" ${c.largo ? raw('style="grid-column:1/-1"') : ''}><span>${c.rot}</span>${inp}</label>`;
+  return html`<label class="campo" ${c.largo ? raw('style="grid-column:1/-1"') : ''}><span>${rotuloComLetra(c.k, c.rot)}</span>${inp}</label>`;
 }
 
 function lerForm(form, campos) {
@@ -116,7 +123,7 @@ async function desenhar() {
     <div class="gav-cab">
       <div class="linha1">
         <div>
-          <h2>${rotuloAio(a)} · ${a.nr_instrumento || a.nr_operacao || 's/ instrumento'} ${a.etapas?.length ? `· Etapa ${fmtEtapas(a.etapas)}` : '· Etapa única'}</h2>
+          <h2>${selo('numero')}${rotuloAio(a)} · ${a.nr_instrumento || a.nr_operacao || 's/ instrumento'} ${a.etapas?.length ? `· Etapa ${fmtEtapas(a.etapas)}` : '· Etapa única'}</h2>
           <div class="sub">${a.municipio || '—'}${a.uf ? `/${a.uf}` : ''} · ${a.proponente || ''}</div>
           <div class="acoes-linha" style="margin-top:6px">
             ${tagTipo(a.tipo)}
@@ -145,15 +152,16 @@ async function desenhar() {
       <section class="sec"><h4>Na Caixa</h4><div id="det-caixa"><p class="muted pequeno">Carregando…</p></div></section>
       <section class="sec"><h4>Dados do MCID (SACI · TransfereGov) <span class="muted pequeno">${a.ref_atualizado_em ? `atualizado em ${fmtDataHora(a.ref_atualizado_em)}` : ''}</span></h4>
         <div class="kv">
-          <div><span>TCI</span>${a.tci || a.cod_tci || '—'}</div>
-          <div><span>Operação Caixa</span>${a.nr_operacao || '—'}</div>
-          <div><span>No TransfereGov</span>${a.ref_tgov === true ? 'Sim' : a.ref_tgov === false ? 'Não' : '—'}</div>
-          <div><span>AIO no TGOV</span>${a.situacao_aio_tgov || '—'} ${a.dt_emissao_aio_tgov ? `(${fmtData(a.dt_emissao_aio_tgov)})` : ''}</div>
-          <div><span>Execução física</span>${a.exec_fisica_pct != null ? `${(+a.exec_fisica_pct).toLocaleString('pt-BR')} %` : '—'}</div>
-          <div><span>Saldo em conta</span>${fmtBRL(a.saldo_conta, true)}</div>
-          <div><span>Último desbloqueio</span>${fmtData(a.dt_ultimo_desbloqueio)}</div>
-          <div><span>E-mail GEPAC07 recebido</span>${fmtData(a.dt_aio_recebido_email)}</div>
-          <div><span>Valor de repasse</span>${fmtBRL(a.ref_valor_repasse)}</div>
+          <div><span>${rotuloComLetra('tci')}</span>${a.tci || a.cod_tci || '—'}</div>
+          <div><span>${rotuloComLetra('nr_operacao')}</span>${a.nr_operacao || '—'}</div>
+          <div><span>${rotuloComLetra('situacao_aio_tgov')}</span>${a.situacao_aio_tgov || '—'}</div>
+          <div><span>${rotuloComLetra('dt_emissao_aio_tgov')}</span>${fmtData(a.dt_emissao_aio_tgov)}</div>
+          <div><span>${rotuloComLetra('exec_fisica_pct')}</span>${a.exec_fisica_pct != null ? `${(+a.exec_fisica_pct).toLocaleString('pt-BR')} %` : '—'}</div>
+          <div><span>${rotuloComLetra('saldo_conta')}</span>${fmtBRL(a.saldo_conta, true)}</div>
+          <div><span>${rotuloComLetra('dt_ultimo_desbloqueio')}</span>${fmtData(a.dt_ultimo_desbloqueio)}</div>
+          <div><span>${rotuloComLetra('dt_aio_recebido_email')}</span>${fmtData(a.dt_aio_recebido_email)}</div>
+          <div><span>${rotuloComLetra('ref_valor_repasse')}</span>${fmtBRL(a.ref_valor_repasse)}</div>
+          <div><span>${rotuloComLetra('caixa_listas')}</span>${a.caixa_listas || '—'}</div>
         </div>
       </section>
       <section class="sec">
@@ -245,7 +253,7 @@ function desenharMomento(a, hist) {
   const idx = princ.findIndex((m) => m.codigo === ref);
   const prox = !a.is_desvio && idx >= 0 && idx < princ.length - 1 ? princ[idx + 1] : null;
   render('#sec-momento', html`
-    <h4>Momento ${pilulaMomento(a.momento)}</h4>
+    <h4><span>${selo('momento_nome')}Momento ${pilulaMomento(a.momento)}</span><span class="muted pequeno">${selo('momento_desde')}desde ${fmtData(a.momento_desde)}</span></h4>
     ${a.is_desvio ? html`<div class="aviso desvio-atual">Em desvio há ${a.dias_no_momento} dias (desde ${fmtData(a.momento_desde)}). A trilha mostra onde o AIO estava no fluxo.</div>` : ''}
     <div class="passos">${princ.map((m, i) => {
       const cls = i < idx || (i === idx && m.is_final) ? 'feito' : i === idx ? `atual ${a.atrasado ? 'atr' : ''}` : '';

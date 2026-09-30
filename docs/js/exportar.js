@@ -2,21 +2,9 @@
 // mesma técnica do painelcargaaio).
 import { nomePessoa } from './estado.js';
 import { carimbo, fmtEtapas } from './util.js';
+import { COLUNAS, colLetra } from './campos.js';
 
-const COLUNAS = [
-  ['numero', 'Nº AIO'], ['nr_instrumento', 'Instrumento'], ['nr_operacao', 'Operação Caixa'], ['tci', 'TCI'], ['processo_sei', 'Processo SEI'],
-  ['municipio', 'Município'], ['uf', 'UF'], ['proponente', 'Proponente'], ['secretaria', 'Secretaria'], ['modalidade', 'Modalidade'],
-  ['descricao', 'Descrição'], ['em_etapas', 'Contrato em etapas'], ['etapas', 'Etapa(s)'], ['etapa_descricao', 'Descrição da etapa'],
-  ['tipo', 'Emissão ou convalidação'], ['momento_nome', 'Momento'], ['momento_desde', 'No momento desde'], ['dias_no_momento', 'Dias no momento'],
-  ['atrasado', 'Atrasado'], ['responsavel', 'Responsável'], ['valor_solicitado', 'Valor solicitado'],
-  ['dt_solicitacao_caixa', 'Solicitação da Caixa'], ['dt_entrada_cgpac', 'Entrada na CGPAC'], ['dt_saida_cgpac', 'Saída da CGPAC'],
-  ['dt_assinatura', 'Assinatura'], ['dt_conclusao', 'Conclusão'], ['dias_mcid', 'Dias no MCid'], ['dias_cgpac', 'Dias na CGPAC'],
-  ['presente_convalidacao', 'Na lista de convalidação da Caixa'], ['caixa_listas', 'Listas da Caixa'], ['caixa_situacao', 'Situação na Caixa'],
-  ['os_emitida', 'O.S. emitida até 03/07'], ['tgov', 'No TGOV'], ['aio_automatica_tgov', 'AIO automática TGOV'],
-  ['aio_automatica_caixa', 'AIO automática Caixa'], ['situacao_aio_tgov', 'AIO no TGOV (situação)'], ['dt_emissao_aio_tgov', 'Emissão AIO TGOV'],
-  ['exec_fisica_pct', 'Execução física (%)'], ['problemas', 'Problemas'], ['ressalvas', 'Ressalvas'], ['localizacao_sei', 'Localização SEI'],
-  ['status_sei', 'Status SEI'], ['obs', 'Observações'], ['updated_at', 'Última alteração'], ['updated_by', 'Alterado por'], ['link_saci', 'Link SACI'],
-];
+
 
 function valor(a, k) {
   const v = a[k];
@@ -25,7 +13,7 @@ function valor(a, k) {
   if (k === 'tipo') return v === 'EMISSAO' ? 'Emissão' : v === 'CONVALIDACAO' ? 'Convalidação' : '';
   if (v === true) return 'Sim';
   if (v === false) return 'Não';
-  if (k === 'valor_solicitado' || k === 'exec_fisica_pct') return v == null ? '' : +v;
+  if (['valor_solicitado', 'exec_fisica_pct', 'saldo_conta', 'ref_valor_repasse'].includes(k)) return v == null ? '' : +v;
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) { const [y, m, d] = v.slice(0, 10).split('-'); return `${d}/${m}/${y}`; }
   return v ?? '';
 }
@@ -73,7 +61,6 @@ function zip(arquivos) {
   const fim = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(central.length), ...u16(central.length), ...u32(tam), ...u32(off), ...u16(0)]);
   return new Blob([...partes, ...cp, fim], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
-const colLetra = (n) => { let s = ''; n++; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = (n - m - 1) / 26; } return s; };
 const escXml = (s) => String(s).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[m]));
 
 export function exportarXLSX(lista) {

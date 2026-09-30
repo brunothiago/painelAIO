@@ -6,6 +6,7 @@ import { abrirDetalhe, detalheAberto, atualizarDetalhe } from './detalhe.js';
 import { abrirNovo } from './novo.js';
 import { renderCaixa, initCaixa } from './caixa.js';
 import { exportarCSV, exportarXLSX } from './exportar.js';
+import { COLUNAS, colLetra, selo } from './campos.js';
 import { VERSAO, abrirVersoes } from './versoes.js';
 
 // ---------------------------------------------------------------------------
@@ -214,6 +215,17 @@ $('#f-limpar').addEventListener('click', () => {
 $('#ordem').addEventListener('change', (e) => { E.ordem = e.target.value; aoFiltrar(); });
 $('#btn-csv').addEventListener('click', () => exportarCSV(filtrar()));
 $('#btn-xlsx').addEventListener('click', () => exportarXLSX(filtrar()));
+$('#btn-colunas').addEventListener('click', () => {
+  const raiz = $('#modal-raiz');
+  render(raiz, html`<div class="modal" id="modal-colunas"><div class="modal-card" style="max-width:620px">
+    <div class="modal-cab"><h2>Mapa de colunas</h2><button class="fechar" type="button" data-fechar>×</button></div>
+    <div class="modal-corpo"><p class="pequeno" style="margin-bottom:10px">A letra de cada campo é a mesma na tela do AIO, no cabeçalho da lista
+      e na planilha exportada (Excel). Ex.: "AIO nº 12, coluna ${colLetra(COLUNAS.findIndex(([k]) => k === 'dt_entrada_cgpac'))}" = entrada na CGPAC do AIO 12.</p>
+      <div class="tab-scroll"><table class="tab"><thead><tr><th>Coluna</th><th>Campo</th></tr></thead><tbody>
+      ${COLUNAS.map(([k, r], i) => html`<tr><td><span class="letra">${colLetra(i)}</span></td><td>${r}</td></tr>`)}</tbody></table></div></div></div></div>`);
+  raiz.querySelector('[data-fechar]').onclick = () => render(raiz, '');
+  $('#modal-colunas').onclick = (e) => { if (e.target.id === 'modal-colunas') render(raiz, ''); };
+});
 
 // ---------------------------------------------------------------------------
 // Render
@@ -313,7 +325,7 @@ function renderLista() {
 
   // todos os AIOs do contrato (mesmo fora do filtro) para mostrar o conjunto de etapas
   const todosDoContrato = (cid) => E.aios.filter((a) => a.contrato_id === cid).sort((x, y) => (x.etapas[0] ?? 0) - (y.etapas[0] ?? 0));
-  const partes = [html`<div class="lcab"><div>Nº</div><div>Instrumento</div><div>Município · objeto</div><div>Etapa</div><div>Tipo</div><div>Momento</div><div>Responsável</div><div>Caixa</div><div style="text-align:right">Valor</div></div>`];
+  const partes = [html`<div class="lcab"><div>${selo('numero')}Nº</div><div>${selo('nr_instrumento')}Instrumento</div><div>${selo('municipio')}${selo('descricao')}Município · objeto</div><div>${selo('etapas')}Etapa</div><div>${selo('tipo')}Tipo</div><div>${selo('momento_nome')}Momento</div><div>${selo('responsavel')}Responsável</div><div>${selo('presente_convalidacao')}Caixa</div><div style="text-align:right">${selo('valor_solicitado')}Valor</div></div>`];
   for (const [cid, g] of grupos) {
     const a0 = g[0];
     const todos = todosDoContrato(cid);
