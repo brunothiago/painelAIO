@@ -166,7 +166,7 @@ async function criarMock(arquivo) {
         ...(base ? { nr_instrumento: base.nr_instrumento, nr_operacao: base.nr_operacao, proponente: base.proponente, municipio: base.municipio,
           uf: base.uf, descricao: base.descricao, secretaria: base.secretaria, modalidade: base.modalidade, em_etapas: base.em_etapas || (a.etapas || []).length > 0,
           cod_tci: base.cod_tci, link_saci: base.link_saci } : { ...c, em_etapas: !!c.em_etapas || (a.etapas || []).length > 0 }),
-        ...a, id: proxId++, contrato_id: cid, etapas: a.etapas || [], momento: a.momento || 'SOLICITADO',
+        ...a, id: proxId++, numero: Math.max(0, ...db.aios.map((x) => x.numero || 0)) + 1, contrato_id: cid, etapas: a.etapas || [], momento: a.momento || 'SOLICITADO',
         momento_desde: a.momento_desde || hojeISO(), responsavel: a.responsavel || eu, versao: 1,
         presente_caixa: false, presente_convalidacao: false, created_by: eu, updated_by: eu,
       };

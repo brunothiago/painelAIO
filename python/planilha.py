@@ -124,7 +124,9 @@ def converter(r, hoje=None):
         "em_etapas": em_etapas,
         "tci": texto(r.get("tci")),
     }
+    id_pl = as_num(r.get("id"))
     aio = {
+        "numero": int(id_pl) if id_pl else None,   # nº do AIO = coluna ID da planilha
         "etapas": etapas,
         "etapa_descricao": etapa_desc,
         "tipo": tipo(r.get("tipo")),

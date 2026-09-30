@@ -1,6 +1,6 @@
 // "Novo AIO": buscar o instrumento nos dados já conhecidos e iniciar o cadastro
 // com os campos pré-preenchidos.
-import { E, DESVIOS, PRINCIPAIS, nomePessoa, pilulaMomento } from './estado.js';
+import { E, DESVIOS, PRINCIPAIS, nomePessoa, pilulaMomento, rotuloAio } from './estado.js';
 import { $, $$, debounce, fmtData, fmtEtapas, hojeISO, html, msgErro, parseEtapas, raw, render, toast } from './util.js';
 import { abrirDetalhe } from './detalhe.js';
 
@@ -145,7 +145,7 @@ function formulario(pre) {
             <div><span>Instrumento</span>${c.nr_instrumento || '—'}</div><div><span>Operação</span>${c.nr_operacao || '—'}</div>
             <div><span>Município</span>${c.municipio || '—'}${c.uf ? `/${c.uf}` : ''}</div><div><span>Proponente</span>${c.proponente || '—'}</div>
             <div style="grid-column:1/-1"><span>Objeto</span>${c.descricao || '—'}</div></div>
-          ${doContrato.length ? html`<p class="pequeno" style="margin-top:10px">AIOs já cadastrados: ${doContrato.map((a) => html`<span style="margin-right:8px">etapa ${fmtEtapas(a.etapas)} ${pilulaMomento(a.momento)}</span>`)}</p>` : ''}`
+          ${doContrato.length ? html`<p class="pequeno" style="margin-top:10px">AIOs já cadastrados: ${doContrato.map((a) => html`<span style="margin-right:8px">${rotuloAio(a)} · etapa ${fmtEtapas(a.etapas)} ${pilulaMomento(a.momento)}</span>`)}</p>` : ''}`
         : html`<div class="grade">${CAMPOS_CONTRATO.map(([k, rot]) => html`<label class="campo"><span>${rot}</span><input type="text" name="c_${k}" value="${c[k] ?? ''}"></label>`)}
             <label class="campo" style="grid-column:1/-1"><span>Descrição do objeto</span><textarea name="c_descricao">${c.descricao || ''}</textarea></label></div>`}
       </section>
@@ -220,8 +220,8 @@ function formulario(pre) {
     try {
       const id = await E.api.criarAio(payload);
       fechar();
-      toast(`AIO cadastrado para ${nomePessoa(payload.aio.responsavel)}.`, 'ok');
       await E.recarregar();
+      toast(`${rotuloAio(E.aios.find((x) => x.id === id))} cadastrado para ${nomePessoa(payload.aio.responsavel)}.`, 'ok');
       abrirDetalhe(id);
     } catch (e) { $('#nv-erro').textContent = msgErro(e); btn.disabled = false; }
   });

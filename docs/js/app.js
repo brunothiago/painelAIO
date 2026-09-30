@@ -1,6 +1,6 @@
 // painelAIO — entrada: login, abas, filtros, KPIs, gargalo, lista agrupada, quadro, atividade.
 import { criarApi } from './api.js';
-import { E, DESVIOS, PRINCIPAIS, filtrar, nomePessoa, pilulaMomento, tagTipo, tagsCaixa } from './estado.js';
+import { E, DESVIOS, PRINCIPAIS, filtrar, nomePessoa, numeroBuscado, pilulaMomento, rotuloAio, tagTipo, tagsCaixa } from './estado.js';
 import { $, $$, debounce, fmtBRLCurto, fmtData, fmtDataHora, fmtEtapas, html, msgErro, render, toast } from './util.js';
 import { abrirDetalhe, detalheAberto, atualizarDetalhe } from './detalhe.js';
 import { abrirNovo } from './novo.js';
@@ -197,6 +197,12 @@ function aplicarFiltrosNaTela() {
 
 function aoFiltrar() { escreverHash(); renderTudo(); }
 $('#f-texto').addEventListener('input', debounce((e) => { E.filtros.texto = e.target.value; aoFiltrar(); }, 200));
+$('#f-texto').addEventListener('keydown', (e) => {   // Enter com "12" ou "#12" abre o AIO nº 12
+  if (e.key !== 'Enter') return;
+  const n = numeroBuscado(e.target.value);
+  const a = n !== null && E.aios.find((x) => x.numero === n);
+  if (a) abrirDetalhe(a.id); else if (n !== null) toast(`Não há AIO nº ${n}.`);
+});
 [['#f-resp', 'resp'], ['#f-sec', 'sec'], ['#f-tipo', 'tipo'], ['#f-conv', 'conv'], ['#f-estr', 'estr']].forEach(([sel, k]) =>
   $(sel).addEventListener('change', (e) => { E.filtros[k] = e.target.value; aoFiltrar(); }));
 [['#f-atr', 'atr'], ['#f-meus', 'meus'], ['#f-concl', 'concl']].forEach(([sel, k]) =>
@@ -269,6 +275,7 @@ function ordenar(l) {
   const c = {
     dias: (a, b) => (b.is_final - a.is_final) * -1 || (b.dias_no_momento ?? -1) - (a.dias_no_momento ?? -1),
     momento: (a, b) => a.momento_ordem - b.momento_ordem || (b.dias_no_momento ?? 0) - (a.dias_no_momento ?? 0),
+    numero: (a, b) => (a.numero ?? 1e9) - (b.numero ?? 1e9),
     instrumento: (a, b) => String(a.nr_instrumento).localeCompare(String(b.nr_instrumento), 'pt', { numeric: true }),
     recentes: (a, b) => String(b.updated_at).localeCompare(String(a.updated_at)),
     valor: (a, b) => (+b.valor_solicitado || 0) - (+a.valor_solicitado || 0),
@@ -279,6 +286,7 @@ function ordenar(l) {
 function linhaAio(a, filho = false) {
   const dias = a.is_final ? '' : a.dias_no_momento != null ? `há ${a.dias_no_momento} dia${a.dias_no_momento === 1 ? '' : 's'}` : '';
   return html`<div class="lrow ${filho ? 'filho' : ''}" data-aio="${a.id}">
+    <div class="c-num" title="${rotuloAio(a)}">${a.numero ?? '—'}</div>
     <div class="c-inst">${filho ? html`<span class="muted">↳ </span>` : html`<b>${a.nr_instrumento || a.nr_operacao || '—'}</b>`}
       ${!filho && a.link_saci ? html` <a class="saci" href="${a.link_saci}" target="_blank" rel="noopener" data-stop>SACI</a>` : ''}
       ${a.problemas ? html` <span class="tag prob" title="${a.ressalvas || ''}">!</span>` : ''}</div>
@@ -305,7 +313,7 @@ function renderLista() {
 
   // todos os AIOs do contrato (mesmo fora do filtro) para mostrar o conjunto de etapas
   const todosDoContrato = (cid) => E.aios.filter((a) => a.contrato_id === cid).sort((x, y) => (x.etapas[0] ?? 0) - (y.etapas[0] ?? 0));
-  const partes = [html`<div class="lcab"><div>Instrumento</div><div>Município · objeto</div><div>Etapa</div><div>Tipo</div><div>Momento</div><div>Responsável</div><div>Caixa</div><div style="text-align:right">Valor</div></div>`];
+  const partes = [html`<div class="lcab"><div>Nº</div><div>Instrumento</div><div>Município · objeto</div><div>Etapa</div><div>Tipo</div><div>Momento</div><div>Responsável</div><div>Caixa</div><div style="text-align:right">Valor</div></div>`];
   for (const [cid, g] of grupos) {
     const a0 = g[0];
     const todos = todosDoContrato(cid);
@@ -314,6 +322,7 @@ function renderLista() {
     const total = todos.reduce((s, a) => s + (+a.valor_solicitado || 0), 0);
     const maxDias = Math.max(...g.filter((a) => !a.is_final).map((a) => a.dias_no_momento || 0), 0);
     partes.push(html`<div class="lrow pai ${aberto ? 'aberto' : ''}" data-contrato="${cid}">
+      <div class="c-num" title="AIOs deste contrato">${todos.map((a) => a.numero ?? '—').join(', ')}</div>
       <div class="c-inst"><span class="seta">▶</span><b>${a0.nr_instrumento || a0.nr_operacao}</b>
         ${a0.link_saci ? html` <a class="saci" href="${a0.link_saci}" target="_blank" rel="noopener" data-stop>SACI</a>` : ''}</div>
       <div class="c-obj"><div class="mun">${a0.municipio || '—'}${a0.uf ? `/${a0.uf}` : ''} <span class="muted pequeno">${a0.secretaria || ''}</span></div>
@@ -341,7 +350,7 @@ function renderQuadro() {
   const l = ordenar(filtrar());
   const col = (titulo, cor, itens) => html`<div class="coluna"><h4 style="border-color:${cor}"><span>${titulo}</span><span>${itens.length}</span></h4>
     ${itens.map((a) => html`<div class="kcard" data-aio="${a.id}">
-      <div><b>${a.nr_instrumento || a.nr_operacao}</b> ${a.etapas?.length ? html`<span class="tag etp">Etapa ${fmtEtapas(a.etapas)}</span>` : ''} ${tagTipo(a.tipo)}</div>
+      <div><span class="nro">${a.numero ?? '—'}</span><b>${a.nr_instrumento || a.nr_operacao}</b> ${a.etapas?.length ? html`<span class="tag etp">Etapa ${fmtEtapas(a.etapas)}</span>` : ''} ${tagTipo(a.tipo)}</div>
       <div>${a.municipio || ''}${a.uf ? `/${a.uf}` : ''}</div>
       ${a.is_desvio ? html`<div>${pilulaMomento(a.momento)}</div>` : ''}
       <div class="pequeno ${a.atrasado ? 'erro' : 'muted'}" style="margin:2px 0 0">${a.is_final ? fmtData(a.momento_desde) : `há ${a.dias_no_momento} dias`} · ${nomePessoa(a.responsavel)}</div>
@@ -361,7 +370,7 @@ async function renderAtividade() {
     render('#atividade', html`<div class="tab-scroll"><table class="tab"><thead><tr><th>Quando</th><th>Quem</th><th>AIO</th><th>O quê</th></tr></thead><tbody>
       ${itens.map((h) => html`<tr data-aio="${h.aio_id}" style="cursor:pointer">
         <td class="num">${fmtDataHora(h.em)}</td><td>${nomePessoa(h.por)}</td>
-        <td><b>${h.nr_instrumento || '—'}</b> ${h.etapas?.length ? `etapa ${fmtEtapas(h.etapas)}` : ''}<div class="muted pequeno">${h.municipio || ''}${h.uf ? `/${h.uf}` : ''}</div></td>
+        <td>${h.numero ? html`<span class="nro">${h.numero}</span>` : ''}<b>${h.nr_instrumento || '—'}</b> ${h.etapas?.length ? `etapa ${fmtEtapas(h.etapas)}` : ''}<div class="muted pequeno">${h.municipio || ''}${h.uf ? `/${h.uf}` : ''}</div></td>
         <td>${ACOES[h.acao] || h.acao}${h.acao === 'momento' || h.acao === 'criado' ? html` → ${pilulaMomento(h.momento_para)} <span class="muted pequeno">${fmtData(h.data_momento)}</span>` : ''}
           ${h.acao === 'edicao' && h.diff ? html`<div class="muted pequeno">${Object.keys(h.diff).join(', ')}</div>` : ''}
           ${h.obs ? html`<div class="muted pequeno">“${h.obs}”</div>` : ''}</td></tr>`)}

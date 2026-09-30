@@ -8,7 +8,7 @@
 drop view if exists v_aio_painel;
 create view v_aio_painel with (security_invoker = on) as
 select
-  a.id, a.contrato_id, a.etapas, a.etapa_descricao, a.tipo, a.momento, a.momento_desde, a.responsavel,
+  a.id, a.numero, a.contrato_id, a.etapas, a.etapa_descricao, a.tipo, a.momento, a.momento_desde, a.responsavel,
   coalesce(a.processo_sei, c.processo_sei) as processo_sei,
   a.valor_solicitado, a.dt_solicitacao_caixa, a.dt_entrada_cgpac, a.dt_saida_cgpac,
   a.dt_assinatura, a.dt_conclusao, a.referencia_solicitacao, a.os_emitida, a.tgov,
@@ -98,7 +98,7 @@ from caixa_lista l;
 -- Feed de atividade (histórico com a identificação do contrato).
 drop view if exists v_atividade;
 create view v_atividade with (security_invoker = on) as
-select h.*, a.contrato_id, a.etapas, c.nr_instrumento, c.municipio, c.uf
+select h.*, a.numero, a.contrato_id, a.etapas, c.nr_instrumento, c.municipio, c.uf
 from aio_historico h
 join aio a      on a.id = h.aio_id
 join contrato c on c.id = a.contrato_id;

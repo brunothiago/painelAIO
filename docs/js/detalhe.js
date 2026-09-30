@@ -1,6 +1,6 @@
 // Gaveta de detalhe do AIO: momento (com histórico), edição com trava otimista,
 // contrato, listas da Caixa, dados do MCID e etapas do mesmo contrato.
-import { E, DESVIOS, PRINCIPAIS, nomePessoa, pilulaMomento, tagTipo } from './estado.js';
+import { E, DESVIOS, PRINCIPAIS, nomePessoa, pilulaMomento, rotuloAio, tagTipo } from './estado.js';
 import { $, $$, copiar, fmtBRL, fmtData, fmtDataHora, fmtEtapas, hojeISO, html, msgErro, parseEtapas, raw, render, toast } from './util.js';
 
 let atual = null;      // id do AIO aberto
@@ -116,12 +116,13 @@ async function desenhar() {
     <div class="gav-cab">
       <div class="linha1">
         <div>
-          <h2>${a.nr_instrumento || a.nr_operacao || 'Sem nº'} ${a.etapas?.length ? `· Etapa ${fmtEtapas(a.etapas)}` : '· Etapa única'}</h2>
+          <h2>${rotuloAio(a)} · ${a.nr_instrumento || a.nr_operacao || 's/ instrumento'} ${a.etapas?.length ? `· Etapa ${fmtEtapas(a.etapas)}` : '· Etapa única'}</h2>
           <div class="sub">${a.municipio || '—'}${a.uf ? `/${a.uf}` : ''} · ${a.proponente || ''}</div>
           <div class="acoes-linha" style="margin-top:6px">
             ${tagTipo(a.tipo)}
             ${a.em_etapas ? html`<span class="tag etp">Contrato em etapas</span>` : ''}
             ${a.link_saci ? html`<a class="saci" href="${a.link_saci}" target="_blank" rel="noopener">SACI ↗</a>` : ''}
+            ${a.numero ? html`<button class="lnk pequeno" data-copiar="${rotuloAio(a)}" type="button">copiar nº</button>` : ''}
             ${a.nr_instrumento ? html`<button class="lnk pequeno" data-copiar="${a.nr_instrumento}" type="button">copiar instrumento</button>` : ''}
             ${a.processo_sei ? html`<button class="lnk pequeno" data-copiar="${a.processo_sei}" type="button">copiar SEI ${a.processo_sei}</button>` : ''}
           </div>
@@ -158,7 +159,7 @@ async function desenhar() {
       <section class="sec">
         <h4>Contrato ${irmaos.length ? html`<span class="tag etp">${irmaos.length + 1} AIOs neste contrato</span>` : ''}</h4>
         ${irmaos.length ? html`<div style="margin-bottom:12px">${irmaos.sort((x, y) => (x.etapas[0] ?? 0) - (y.etapas[0] ?? 0)).map((x) => html`
-          <button class="res" data-ir="${x.id}" type="button"><span><b>Etapa ${fmtEtapas(x.etapas)}</b> · ${x.tipo === 'EMISSAO' ? 'Emissão' : x.tipo === 'CONVALIDACAO' ? 'Convalidação' : ''} · ${fmtBRL(x.valor_solicitado)}</span>${pilulaMomento(x.momento)}</button>`)}</div>` : ''}
+          <button class="res" data-ir="${x.id}" type="button"><span><b>${rotuloAio(x)} · Etapa ${fmtEtapas(x.etapas)}</b> · ${x.tipo === 'EMISSAO' ? 'Emissão' : x.tipo === 'CONVALIDACAO' ? 'Convalidação' : ''} · ${fmtBRL(x.valor_solicitado)}</span>${pilulaMomento(x.momento)}</button>`)}</div>` : ''}
         <form id="form-contrato"><div class="grade">${CAMPOS_CONTRATO.map((c) => campo(c, a[c.k]))}</div>
           <button class="btn sec" type="submit" id="btn-salvar-contrato" disabled>Salvar contrato</button></form>
         <div class="acoes-linha" style="margin-top:10px"><button class="btn sec" type="button" id="btn-nova-etapa">+ Novo AIO para outra etapa deste contrato</button></div>

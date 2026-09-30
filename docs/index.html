@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/painel.css?v=1.0.0">
+<link rel="stylesheet" href="css/painel.css?v=1.1.0">
 </head>
 <body>
 
@@ -67,7 +67,7 @@
       <div class="gbars" id="gargalo"></div>
     </section>
     <div class="filtros" id="filtros">
-      <input class="inp busca" id="f-texto" type="search" placeholder="Buscar instrumento, operação, processo SEI, município, proponente…">
+      <input class="inp busca" id="f-texto" type="search" placeholder="Nº do AIO (ex.: 12 + Enter), instrumento, operação, SEI, município…">
       <select class="inp" id="f-resp"><option value="">Todos os responsáveis</option></select>
       <select class="inp" id="f-sec"><option value="">Todas as secretarias</option></select>
       <select class="inp" id="f-tipo">
@@ -100,6 +100,7 @@
         <div class="acoes">
           <select class="inp" id="ordem" style="width:auto">
             <option value="dias">Mais tempo no momento</option>
+            <option value="numero">Nº do AIO</option>
             <option value="momento">Momento</option>
             <option value="instrumento">Instrumento</option>
             <option value="recentes">Alterados recentemente</option>
@@ -148,6 +149,6 @@
 <div id="gaveta-raiz"></div>
 <div id="modal-raiz"></div>
 
-<script type="module" src="js/app.js?v=1.0.0"></script>
+<script type="module" src="js/app.js?v=1.1.0"></script>
 </body>
 </html>

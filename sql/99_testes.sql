@@ -115,6 +115,13 @@ begin
     if sqlerrm not like 'A data do momento não pode ser futura%' then raise; end if;
   end;
 
+  -- 12) nº sequencial automático e fixo
+  select count(*) into n from aio where id = v_id and numero = (select max(numero) from aio);
+  if n <> 1 then raise exception 'FALHOU 12a: AIO novo sem o próximo nº'; end if;
+  update aio set numero = 999999 where id = v_id;
+  select count(*) into n from aio where id = v_id and numero = 999999;
+  if n <> 0 then raise exception 'FALHOU 12b: analista conseguiu mudar o nº do AIO'; end if;
+
   -- 11) edição de campo gera diff no histórico
   update aio set obs = 'observação de teste' where id = v_id;
   select count(*) into n from aio_historico where aio_id = v_id and acao = 'edicao' and diff ? 'obs';

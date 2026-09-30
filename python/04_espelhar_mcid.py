@@ -30,7 +30,7 @@ TABELAS = {
         modalidade text, fase_pac text, em_etapas boolean, cod_tci text, tci text,
         created_at timestamptz, created_by text, updated_at timestamptz, updated_by text""", False),
     "aio": ("painelaio_aio", """
-        id bigint primary key, contrato_id bigint, etapas int[], etapa_descricao text, tipo text,
+        id bigint primary key, numero int, contrato_id bigint, etapas int[], etapa_descricao text, tipo text,
         momento text, momento_desde date, responsavel text, processo_sei text, valor_solicitado numeric(15,2),
         dt_solicitacao_caixa date, dt_entrada_cgpac date, dt_saida_cgpac date, dt_assinatura date,
         dt_conclusao date, referencia_solicitacao text, os_emitida boolean, tgov boolean,
@@ -85,6 +85,16 @@ def main():
             return
 
     from psycopg2.extras import Json, execute_values
+
+    # colunas novas do painel entram no espelho sem precisar recriar as tabelas
+    with conn, conn.cursor() as cur:
+        for _, (tab, ddl, _) in TABELAS.items():
+            cur.execute("select 1 from information_schema.tables where table_schema=%s and table_name=%s", (s, tab))
+            if cur.fetchone():
+                for col in re.split(r",(?![^()]*\))", ddl):
+                    col = col.strip()
+                    if col and "primary key" not in col:
+                        cur.execute(f"alter table {s}.{tab} add column if not exists {col}")
 
     sb = SupabaseREST()
     resumo = {}

@@ -137,10 +137,19 @@ begin
     new.created_at := now();
     new.created_by := fn_autor();
     new.versao     := 1;
+    if new.numero is null then
+      -- próximo nº; a trava evita dois AIOs com o mesmo nº em cadastros simultâneos
+      perform pg_advisory_xact_lock(hashtext('painelaio.aio.numero'));
+      select coalesce(max(numero), 0) + 1 into new.numero from aio;
+    end if;
   else
     new.created_at := old.created_at;
     new.created_by := old.created_by;
     new.versao     := old.versao + 1;
+    -- o nº não muda depois de dado (só os scripts podem corrigir)
+    if old.numero is not null and not is_servico() then
+      new.numero := old.numero;
+    end if;
     if new.excluido_em is distinct from old.excluido_em and not (is_admin() or is_servico()) then
       raise exception 'Só administradores podem excluir ou restaurar um AIO.';
     end if;
@@ -187,7 +196,7 @@ declare
   v_obs  text := nullif(current_setting('app.obs', true), '');
   v_diff jsonb;
   v_ign  text[] := array['versao', 'updated_at', 'updated_by', 'created_at', 'created_by',
-                         'momento', 'momento_desde', 'excluido_em'];
+                         'momento', 'momento_desde', 'excluido_em', 'numero'];
 begin
   if tg_op = 'INSERT' then
     insert into aio_historico (aio_id, por, acao, momento_para, data_momento, obs)
@@ -331,7 +340,7 @@ begin
                    processo_sei, valor_solicitado, dt_solicitacao_caixa, dt_entrada_cgpac, dt_saida_cgpac,
                    dt_assinatura, dt_conclusao, referencia_solicitacao, os_emitida, tgov,
                    aio_automatica_tgov, aio_automatica_caixa, problemas, ressalvas, localizacao_sei,
-                   status_sei, obs)
+                   status_sei, obs, numero)
   values (
     v_contrato,
     coalesce((select array_agg(x::int) from jsonb_array_elements_text(a -> 'etapas') x), '{}'),
@@ -356,7 +365,8 @@ begin
     nullif(a ->> 'ressalvas', ''),
     nullif(a ->> 'localizacao_sei', ''),
     nullif(a ->> 'status_sei', ''),
-    nullif(a ->> 'obs', '')
+    nullif(a ->> 'obs', ''),
+    case when is_servico() then nullif(a ->> 'numero', '')::int end   -- carga da planilha usa o ID dela
   )
   returning id into v_id;
 

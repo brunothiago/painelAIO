@@ -4,6 +4,13 @@ import { $, html, render } from './util.js';
 
 export const VERSOES = [
   {
+    v: '1.1.0', data: '30/09/2026', itens: [
+      'Nº sequencial de cada AIO (AIO nº 1, 2, 3…), igual à coluna ID da planilha para os AIOs da carga inicial; os novos recebem o próximo nº.',
+      'Busca pelo nº: digite 12 (ou #12) e aperte Enter para abrir o AIO nº 12. Ordenação por nº.',
+      'Nº na lista, no detalhe, no quadro, na atividade e na exportação.',
+    ],
+  },
+  {
     v: '1.0.0', data: '29/09/2026', itens: [
       'Primeira versão do Painel AIO com cadastro ao vivo (Supabase).',
       'Momentos do fluxo: Solicitado → Recebido na CGPAC → Em análise → Tramitado ao GAB-SE → Assinado → Concluído, e desvios com observação obrigatória.',

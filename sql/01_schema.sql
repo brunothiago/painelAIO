@@ -93,6 +93,9 @@ create table if not exists aio (
   updated_at              timestamptz not null default now(),
   updated_by              text
 );
+-- Nº sequencial do AIO (para citar em conversa: "AIO 12"). Nunca muda nem é reaproveitado.
+alter table aio add column if not exists numero int;
+create unique index if not exists aio_numero_uk on aio (numero) where numero is not null;
 create index if not exists aio_contrato_ix on aio (contrato_id);
 create index if not exists aio_momento_ix  on aio (momento);
 

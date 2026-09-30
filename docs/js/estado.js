@@ -21,6 +21,17 @@ export const E = {
   novoAio: () => {},
 };
 
+/** "AIO nº 12" (ou "AIO s/nº" antes da numeração). */
+export const rotuloAio = (a) => (a?.numero ? `AIO nº ${a.numero}` : 'AIO s/nº');
+
+/** "12", "#12", "nº 12", "aio 12" -> 12 ; outra coisa -> null */
+export function numeroBuscado(texto) {
+  const t = String(texto || '').trim();
+  let m = t.match(/^(\d{1,3})$/);
+  if (!m) m = t.match(/^(?:#|n[ºo°.]?\s*|aio\s*(?:n[ºo°.]?\s*)?)(\d{1,5})$/i);
+  return m ? +m[1] : null;
+}
+
 export const PRINCIPAIS = () => E.momentos.filter((m) => !m.is_desvio);
 export const DESVIOS = () => E.momentos.filter((m) => m.is_desvio);
 
@@ -50,14 +61,16 @@ export function tagTipo(t) {
 
 /** Texto de busca de um AIO (instrumento, operação, SEI, município, proponente, descrição). */
 export function textoBusca(a) {
-  return norm([a.nr_instrumento, a.nr_operacao, a.nr_proposta, a.processo_sei, a.municipio, a.uf, a.proponente,
+  return norm([a.numero ? `#${a.numero}` : '', a.nr_instrumento, a.nr_operacao, a.nr_proposta, a.processo_sei, a.municipio, a.uf, a.proponente,
     a.descricao, a.tci, a.cod_tci, a.ressalvas, a.obs, nomePessoa(a.responsavel)].join(' '));
 }
 
 export function filtrar(lista = E.aios, ignorarMomento = false) {
   const f = E.filtros;
-  const palavras = norm(f.texto).split(/\s+/).filter(Boolean);
+  const num = numeroBuscado(f.texto);
+  const palavras = num !== null ? [] : norm(f.texto).split(/\s+/).filter(Boolean);
   return lista.filter((a) => {
+    if (num !== null && a.numero !== num) return false;
     if (!ignorarMomento && f.momentos.length && !f.momentos.includes(a.momento)) return false;
     if (f.resp && (a.responsavel || '') !== f.resp) return false;
     if (f.sec && (a.secretaria || '') !== f.sec) return false;

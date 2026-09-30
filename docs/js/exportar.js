@@ -4,7 +4,7 @@ import { nomePessoa } from './estado.js';
 import { carimbo, fmtEtapas } from './util.js';
 
 const COLUNAS = [
-  ['nr_instrumento', 'Instrumento'], ['nr_operacao', 'Operação Caixa'], ['tci', 'TCI'], ['processo_sei', 'Processo SEI'],
+  ['numero', 'Nº AIO'], ['nr_instrumento', 'Instrumento'], ['nr_operacao', 'Operação Caixa'], ['tci', 'TCI'], ['processo_sei', 'Processo SEI'],
   ['municipio', 'Município'], ['uf', 'UF'], ['proponente', 'Proponente'], ['secretaria', 'Secretaria'], ['modalidade', 'Modalidade'],
   ['descricao', 'Descrição'], ['em_etapas', 'Contrato em etapas'], ['etapas', 'Etapa(s)'], ['etapa_descricao', 'Descrição da etapa'],
   ['tipo', 'Emissão ou convalidação'], ['momento_nome', 'Momento'], ['momento_desde', 'No momento desde'], ['dias_no_momento', 'Dias no momento'],
