@@ -62,7 +62,7 @@ Navegador (equipe) ── login ──► Supabase (banco na nuvem, login, tempo
 
 1. Entre em <https://supabase.com> e clique em **New project**:
    - nome `painelAIO`;
-   - região **South America (São Paulo)**;
+   - região **South America (São Paulo)** (o projeto atual, endemgpdmmdjkfflfbmb, ficou em **US East (Ohio)** — funciona igual);
    - anote a senha do banco num lugar seguro.
 2. **SQL Editor**: cole e rode, **nesta ordem**, cada arquivo da pasta `sql/`:
    1. `01_schema.sql`
