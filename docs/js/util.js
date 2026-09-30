@@ -120,7 +120,9 @@ export function msgErro(e) {
   const m = e?.message || String(e);
   if (/Failed to fetch|NetworkError/i.test(m)) return 'Sem conexão com o servidor. Verifique a internet e tente de novo.';
   if (/JWT expired|invalid jwt/i.test(m)) return 'Sua sessão expirou. Entre de novo.';
-  if (/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
+  if (/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos. Confira se não há espaço no fim da senha; se continuar, peça ao administrador uma senha nova.';
+  if (/rate limit|too many/i.test(m)) return 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.';
+  if (/Email not confirmed/i.test(m)) return 'Usuário ainda não confirmado. Peça ao administrador para confirmar seu acesso.';
   if (/permission denied|row-level security/i.test(m)) return 'Você não tem permissão para esta ação.';
   return m;
 }

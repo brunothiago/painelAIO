@@ -28,7 +28,14 @@ async function criarSupabase() {
   return {
     modo: 'supabase',
     async sessao() { const { data } = await sb.auth.getSession(); return data.session?.user?.email || null; },
-    async entrar(email, senha) { ok(await sb.auth.signInWithPassword({ email: email.trim(), password: senha })); },
+    async entrar(email, senha) {
+      const r = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: senha });
+      // senha copiada do Teams/e-mail costuma vir com espaço no fim: tenta de novo sem ele
+      if (r.error && /Invalid login credentials/i.test(r.error.message) && senha !== senha.trim()) {
+        return ok(await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password: senha.trim() }));
+      }
+      ok(r);
+    },
     async sair() { if (canal) sb.removeChannel(canal); await sb.auth.signOut(); },
     async trocarSenha(nova) { ok(await sb.auth.updateUser({ password: nova })); },
 
