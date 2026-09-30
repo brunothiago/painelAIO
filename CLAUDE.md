@@ -31,6 +31,7 @@ Painel AIO (`painelAIO`): painel ao vivo em que a equipe da MCID/SE/DMP/CGPAC ca
 .venv/bin/python python/04_espelhar_mcid.py [--criar-tabelas] [--commit]   # VPN
 .venv/bin/python python/05_gerar_mock.py && python3 -m http.server 8000   # prévia: /docs/?mock=1
 ./publicar.sh "mensagem"
+.venv/bin/python python/aplicar_sql.py [01 02 03 ...] [--commit]   # aplica sql/ no Supabase via pooler (SUPABASE_DB_URL); sempre roda 04 após 01–03 e termina com 99
 ```
 
 ## Segurança
