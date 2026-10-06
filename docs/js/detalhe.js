@@ -2,6 +2,7 @@
 // contrato, listas da Caixa, dados do MCID e etapas do mesmo contrato.
 import { E, DESVIOS, PRINCIPAIS, nomePessoa, pilulaMomento, rotuloAio, tagTipo } from './estado.js';
 import { COLUNAS, rotuloComLetra, selo } from './campos.js';
+import { attrFormato, campoLista, campoRef, lerLista, lerRef, ligarListas } from './listas.js';
 import { $, $$, copiar, fmtBRL, fmtData, fmtDataHora, fmtEtapas, hojeISO, html, msgErro, parseEtapas, raw, render, toast } from './util.js';
 
 let atual = null;      // id do AIO aberto
@@ -16,14 +17,14 @@ const CAMPOS_AIO = [
   { k: 'responsavel', rot: 'Responsável', t: 'pessoa' },
   { k: 'processo_sei', rot: 'Processo SEI', t: 'txt' },
   { k: 'valor_solicitado', rot: 'Valor solicitado (R$)', t: 'num' },
-  { k: 'referencia_solicitacao', rot: 'Referência da solicitação', t: 'txt' },
+  { k: 'referencia_solicitacao', rot: 'Referência da solicitação (valores que conferem)', t: 'ref', largo: true },
   { k: 'dt_solicitacao_caixa', rot: 'Solicitação da Caixa', t: 'data' },
   { k: 'dt_entrada_cgpac', rot: 'Entrada na CGPAC', t: 'data' },
   { k: 'dt_saida_cgpac', rot: 'Saída da CGPAC', t: 'data' },
   { k: 'dt_assinatura', rot: 'Assinatura', t: 'data' },
   { k: 'dt_conclusao', rot: 'Conclusão (AIO concedida)', t: 'data' },
-  { k: 'localizacao_sei', rot: 'Localização no SEI', t: 'txt' },
-  { k: 'status_sei', rot: 'Status no SEI', t: 'txt' },
+  { k: 'localizacao_sei', rot: 'Localização no SEI', t: 'lista' },
+  { k: 'status_sei', rot: 'Status no SEI', t: 'lista' },
   { k: 'os_emitida', rot: 'O.S. emitida até 03/07/2026', t: 'bool' },
   { k: 'tgov', rot: 'No TransfereGov', t: 'bool' },
   { k: 'aio_automatica_tgov', rot: 'AIO automática no TGOV', t: 'bool' },
@@ -37,10 +38,10 @@ const CAMPOS_CONTRATO = [
   { k: 'processo_sei', rot: 'Processo SEI', t: 'txt' },
   { k: 'proponente', rot: 'Proponente', t: 'txt' },
   { k: 'municipio', rot: 'Município', t: 'txt' },
-  { k: 'uf', rot: 'UF', t: 'txt' },
-  { k: 'secretaria', rot: 'Secretaria', t: 'txt' },
-  { k: 'modalidade', rot: 'Modalidade', t: 'txt' },
-  { k: 'fase_pac', rot: 'Fase do PAC', t: 'txt' },
+  { k: 'uf', rot: 'UF', t: 'lista' },
+  { k: 'secretaria', rot: 'Secretaria', t: 'lista' },
+  { k: 'modalidade', rot: 'Modalidade', t: 'lista' },
+  { k: 'fase_pac', rot: 'Fase do PAC', t: 'lista' },
   { k: 'em_etapas', rot: 'Contrato executado em etapas', t: 'bool' },
   { k: 'descricao', rot: 'Descrição do objeto', t: 'area', largo: true },
 ];
@@ -55,7 +56,9 @@ function campo(c, v) {
   const nome = `name="${c.k}"`;
   const val = v ?? '';
   let inp;
-  if (c.t === 'sel') inp = html`<select ${raw(nome)}>${c.ops.map(([o, r]) => html`<option value="${o}" ${o === (v ?? '') ? raw('selected') : ''}>${r}</option>`)}</select>`;
+  if (c.t === 'lista') inp = campoLista(c.k, c.k, v);
+  else if (c.t === 'ref') inp = campoRef(c.k, v);
+  else if (c.t === 'sel') inp = html`<select ${raw(nome)}>${c.ops.map(([o, r]) => html`<option value="${o}" ${o === (v ?? '') ? raw('selected') : ''}>${r}</option>`)}</select>`;
   else if (c.t === 'bool') inp = html`<select ${raw(nome)}><option value="">—</option><option value="true" ${v === true ? raw('selected') : ''}>Sim</option><option value="false" ${v === false ? raw('selected') : ''}>Não</option></select>`;
   else if (c.t === 'pessoa') {
     const lista = [...E.perfis.filter((p) => p.ativo)];
@@ -65,13 +68,19 @@ function campo(c, v) {
   else if (c.t === 'data') inp = html`<input type="date" ${raw(nome)} value="${val ? String(val).slice(0, 10) : ''}" max="${hojeISO()}">`;
   else if (c.t === 'num') inp = html`<input type="number" step="0.01" min="0" ${raw(nome)} value="${val}">`;
   else if (c.t === 'etapas') inp = html`<input type="text" ${raw(nome)} value="${fmtEtapas(v)}">`;
-  else inp = html`<input type="text" ${raw(nome)} value="${val}">`;
-  return html`<label class="campo" ${c.largo ? raw('style="grid-column:1/-1"') : ''}><span>${rotuloComLetra(c.k, c.rot)}</span>${inp}</label>`;
+  else inp = html`<input type="text" ${raw(nome)} value="${val}" ${attrFormato(c.k)}>`;
+  const tag = c.t === 'ref' ? 'div' : 'label';   // caixas de marcar não podem ficar dentro de <label>
+  return html`<${raw(tag)} class="campo" ${c.largo ? raw('style="grid-column:1/-1"') : ''}><span>${rotuloComLetra(c.k, c.rot)}</span>${inp}</${raw(tag)}>`;
 }
 
 function lerForm(form, campos) {
   const out = {};
   campos.forEach((c) => {
+    if (c.t === 'lista' || c.t === 'ref') {
+      const v = c.t === 'lista' ? lerLista(form, c.k) : lerRef(form, c.k);
+      if (v !== undefined) out[c.k] = v;
+      return;
+    }
     const el = form.elements[c.k];
     if (!el) return;
     let v = el.value.trim();
@@ -190,6 +199,7 @@ async function desenhar() {
 
   // edição do AIO
   const f = $('#form-aio');
+  ligarListas(f);
   f.addEventListener('input', () => {
     const mud = lerForm(f, CAMPOS_AIO);
     const n = Object.keys(mud).filter((k) => !igual(mud[k], a[k])).length;
@@ -212,6 +222,7 @@ async function desenhar() {
 
   // edição do contrato
   const fc = $('#form-contrato');
+  ligarListas(fc);
   fc.addEventListener('input', () => {
     const mud = lerForm(fc, CAMPOS_CONTRATO);
     $('#btn-salvar-contrato').disabled = !Object.keys(mud).some((k) => !igual(mud[k], a[k]));

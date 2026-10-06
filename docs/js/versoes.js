@@ -4,6 +4,15 @@ import { $, html, render } from './util.js';
 
 export const VERSOES = [
   {
+    v: '1.3.0', data: '06/10/2026', itens: [
+      'Listas fixas no preenchimento: UF, secretaria, modalidade (agrupada por secretaria) e fase do PAC viram seletores; localização e status no SEI também, com a opção "Outro (digitar)…" para casos novos.',
+      'Referência da solicitação: caixas de marcar (Global Repasse, SPA Repasse, Licitação Repasse…) em vez de texto livre; o painel monta "Global Repasse = SPA Repasse" sozinho.',
+      'Processo SEI e nº do instrumento/operação conferidos no formato; o processo SEI digitado só com números ganha a pontuação sozinho.',
+      'Cadastro de AIO novo usa as mesmas listas (e ganhou a fase do PAC); o que vem do SACI ou da Caixa já entra na grafia padrão.',
+      'Valores antigos digitados de jeitos diferentes foram unificados (ex.: "Contenção" → "Contenção de Encostas", "SPA Gllobal" → "SPA Global").',
+    ],
+  },
+  {
     v: '1.2.0', data: '30/09/2026', itens: [
       'Cada campo tem uma letra, como no Excel (A = Nº AIO, B = Instrumento…), igual à coluna da planilha exportada.',
       'As letras aparecem no preenchimento do AIO, no cadastro de AIO novo, nos dados do MCID e no cabeçalho da lista.',

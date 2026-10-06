@@ -2,6 +2,7 @@
 // com os campos pré-preenchidos.
 import { E, DESVIOS, PRINCIPAIS, nomePessoa, pilulaMomento, rotuloAio } from './estado.js';
 import { rotuloComLetra } from './campos.js';
+import { attrFormato, campoLista, lerLista, ligarListas } from './listas.js';
 import { $, $$, debounce, fmtData, fmtEtapas, hojeISO, html, msgErro, parseEtapas, raw, render, toast } from './util.js';
 import { abrirDetalhe } from './detalhe.js';
 
@@ -127,10 +128,15 @@ function daFila(f, referencias = []) {
 // ---------------------------------------------------------------------------
 // Passo 2: formulário
 // ---------------------------------------------------------------------------
+// [campo, rótulo, lista?] — com lista, vira <select> (listas.js)
 const CAMPOS_CONTRATO = [
   ['nr_instrumento', 'Nº do instrumento (TransfereGov)'], ['nr_operacao', 'Nº da operação (Caixa)'], ['processo_sei', 'Processo SEI'],
-  ['proponente', 'Proponente'], ['municipio', 'Município'], ['uf', 'UF'], ['secretaria', 'Secretaria'], ['modalidade', 'Modalidade'],
+  ['proponente', 'Proponente'], ['municipio', 'Município'], ['uf', 'UF', true], ['secretaria', 'Secretaria', true],
+  ['modalidade', 'Modalidade', true], ['fase_pac', 'Fase do PAC', true],
 ];
+const campoContrato = ([k, rot, lista], v) => html`<label class="campo"><span>${rotuloComLetra(k, rot)}</span>${lista
+  ? campoLista(`c_${k}`, k, v, { estrito: true })
+  : html`<input type="text" name="c_${k}" value="${v ?? ''}" ${attrFormato(k)}>`}</label>`;
 
 function formulario(pre) {
   const existente = !!pre.contrato_id;
@@ -147,7 +153,7 @@ function formulario(pre) {
             <div><span>Município</span>${c.municipio || '—'}${c.uf ? `/${c.uf}` : ''}</div><div><span>Proponente</span>${c.proponente || '—'}</div>
             <div style="grid-column:1/-1"><span>Objeto</span>${c.descricao || '—'}</div></div>
           ${doContrato.length ? html`<p class="pequeno" style="margin-top:10px">AIOs já cadastrados: ${doContrato.map((a) => html`<span style="margin-right:8px">${rotuloAio(a)} · etapa ${fmtEtapas(a.etapas)} ${pilulaMomento(a.momento)}</span>`)}</p>` : ''}`
-        : html`<div class="grade">${CAMPOS_CONTRATO.map(([k, rot]) => html`<label class="campo"><span>${rotuloComLetra(k, rot)}</span><input type="text" name="c_${k}" value="${c[k] ?? ''}"></label>`)}
+        : html`<div class="grade">${CAMPOS_CONTRATO.map((d) => campoContrato(d, c[d[0]]))}
             <label class="campo" style="grid-column:1/-1"><span>${rotuloComLetra('descricao')}</span><textarea name="c_descricao">${c.descricao || ''}</textarea></label></div>`}
       </section>
       <section class="sec">
@@ -162,7 +168,7 @@ function formulario(pre) {
           <label class="campo"><span>${rotuloComLetra('responsavel', 'Responsável')}</span><select name="responsavel">${E.perfis.filter((p) => p.ativo).map((p) => html`<option value="${p.email}" ${p.email.toLowerCase() === (E.usuario || '').toLowerCase() ? raw('selected') : ''}>${p.nome || p.email}</option>`)}</select></label>
           <label class="campo"><span>${rotuloComLetra('valor_solicitado', 'Valor solicitado (R$)')}</span><input type="number" step="0.01" min="0" name="valor_solicitado" value="${s.valor_solicitado ?? ''}"></label>
           <label class="campo"><span>${rotuloComLetra('dt_solicitacao_caixa', 'Solicitação da Caixa')}</span><input type="date" name="dt_solicitacao_caixa" value="${s.dt_solicitacao_caixa ? String(s.dt_solicitacao_caixa).slice(0, 10) : ''}" max="${hojeISO()}"></label>
-          ${existente ? html`<label class="campo"><span>${rotuloComLetra('processo_sei', 'Processo SEI (se diferente)')}</span><input type="text" name="processo_sei" value=""></label>` : ''}
+          ${existente ? html`<label class="campo"><span>${rotuloComLetra('processo_sei', 'Processo SEI (se diferente)')}</span><input type="text" name="processo_sei" value="" ${attrFormato('processo_sei')}></label>` : ''}
           <label class="campo" style="grid-column:1/-1"><span>${rotuloComLetra('etapa_descricao', 'Descrição da etapa')}</span><input type="text" name="etapa_descricao" value="${s.etapa_descricao || ''}"></label>
           <label class="campo"><span>${rotuloComLetra('momento_nome', 'Momento inicial')}</span><select name="momento">
             <optgroup label="Fluxo">${princ.map((m) => html`<option value="${m.codigo}" ${m.codigo === 'RECEBIDO' ? raw('selected') : ''}>${m.nome}</option>`)}</optgroup>
@@ -180,6 +186,7 @@ function formulario(pre) {
     </form>`);
 
   const f = $('#nv-form');
+  ligarListas(f);
   $('#nv-voltar').addEventListener('click', busca);
   const checar = () => {
     const desvio = E.mom[f.momento.value]?.is_desvio;
@@ -201,8 +208,8 @@ function formulario(pre) {
     const btn = f.querySelector('button[type=submit]'); btn.disabled = true; $('#nv-erro').textContent = '';
     const val = (n) => (f.elements[n]?.value ?? '').trim() || null;
     const etapas = parseEtapas(f.etapas.value);
-    const contrato = existente ? {} : Object.fromEntries([...CAMPOS_CONTRATO.map(([k]) => [k, val(`c_${k}`)]), ['descricao', val('c_descricao')],
-      ['nr_proposta', c.nr_proposta || null], ['fase_pac', c.fase_pac || null], ['cod_tci', c.cod_tci || null], ['tci', c.tci || null],
+    const contrato = existente ? {} : Object.fromEntries([...CAMPOS_CONTRATO.map(([k, , lista]) => [k, lista ? lerLista(f, `c_${k}`) : val(`c_${k}`)]),
+      ['descricao', val('c_descricao')], ['nr_proposta', c.nr_proposta || null], ['cod_tci', c.cod_tci || null], ['tci', c.tci || null],
       ['em_etapas', etapas.length > 0 || !!c.em_etapas]]);
     if (!existente && !contrato.nr_instrumento && !contrato.nr_operacao) {
       $('#nv-erro').textContent = 'Informe o nº do instrumento ou da operação.'; btn.disabled = false; return;

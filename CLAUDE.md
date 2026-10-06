@@ -20,6 +20,7 @@ Painel AIO (`painelAIO`): painel ao vivo em que a equipe da MCID/SE/DMP/CGPAC ca
   - operação: dígitos antes do "-", sem zeros à esquerda.
 - **Listas da Caixa.** O leitor está duplicado: `python/caixa.py` e `docs/js/caixa.js`. Os dois usam o mesmo `docs/js/caixa_mapa.json`. Mudou um, mude o outro. T3/T4 não contam como convalidação por padrão (`caixa_lista.convalidacao`).
 - **Visão `v_aio_painel`.** Completa proponente, município, UF, objeto, secretaria e modalidade com a tabela `referencia` (SACI) quando o contrato não tem esses dados.
+- **Listas fixas** (`docs/js/listas.js`): UF, secretaria, modalidade e fase do PAC são fechadas; localização e status no SEI são abertas ("Outro"); referência da solicitação são caixas de marcar unidas por " = ". Secretaria e modalidade usam a grafia do SACI. Mudou uma lista, revise `sql/07_padronizar.sql`.
 - **Execução física** fica em % (0–100). A planilha traz fração, e o seed multiplica por 100.
 - Ao mudar uma coluna, atualize `sql/`, a visão, `python/04_espelhar_mcid.py` (DDL do espelho), `docs/js/detalhe.js` (CAMPOS_*) e `docs/js/exportar.js`.
 
