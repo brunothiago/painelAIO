@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 import pathlib
+import platform
 import re
 import sys
 import unicodedata
@@ -135,7 +136,7 @@ class SupabaseREST:
     def log(self, script, direcao, linhas, ok=True, detalhe=None):
         try:
             self.insert("sync_log", [{"script": script, "direcao": direcao, "linhas": linhas,
-                                      "ok": ok, "detalhe": detalhe or {}}])
+                                      "ok": ok, "detalhe": {**(detalhe or {}), "maquina": platform.node()}}])
         except ErroSupabase as e:
             print(f"(aviso) não gravou sync_log: {e}")
 

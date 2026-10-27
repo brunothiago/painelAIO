@@ -118,9 +118,63 @@ launchctl load ~/Library/LaunchAgents/com.mcid.painelaio_sync.plist
 ```
 
 - Roda `rodar_sync.sh` às 08:30 e às 14:00.
+- Primeiro lê os e-mails de AIO da GEPAC07 (`../painelcargaaio/aio_pipeline.py`, últimos 7 dias) para `se_cgpac.aio_solicitacoes`; depois leva tudo ao Supabase e atualiza o espelho.
 - O log fica em `~/logs/painelaio_sync.log`.
 - Sem VPN, o script avisa no log e sai sem erro.
 - O uso diário também evita que o Supabase gratuito entre em pausa, o que acontece depois de ~7 dias parado.
+
+### 5. Notebook Windows ligado 24h (e o Mac quando quiser)
+
+Divisão de papéis:
+- **Notebook Windows:** roda a sincronização sozinho, nos horários agendados. Não se edita código nele. Antes de cada rodada ele faz `git pull` dos dois repositórios.
+- **Mac:** é onde se edita, faz commit e push (`./publicar.sh`). Para atualizar na hora, rode `./rodar_sync.sh`. Rodar nos dois não causa problema, porque todos os passos gravam por chave e não duplicam.
+- **Para saber se o notebook está rodando,** veja o rodapé do site ("atualizados em ..."). A tabela `sync_log` guarda também o nome da máquina (`detalhe.maquina`).
+
+O site não muda: continua no GitHub Pages. No Windows ficam só os scripts de sincronização. Instale antes o [Python 3.13](https://www.python.org/downloads/) (marque "Add python.exe to PATH") e o [Git](https://git-scm.com/download/win). Use uma pasta fora do OneDrive, para o `config.env` não ir para a nuvem.
+
+```powershell
+mkdir C:\NamiDash; cd C:\NamiDash
+git clone https://github.com/brunothiago/painelAIO.git
+git clone https://github.com/brunothiago/painelcargaaio.git   # tem de ficar ao lado do painelAIO
+
+cd C:\NamiDash\painelAIO
+py -3.13 -m venv .venv
+.venv\Scripts\python -m pip install -r python\requirements.txt
+cd C:\NamiDash\painelcargaaio
+py -3.13 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+```
+
+Copie do Mac, por pendrive ou pasta de rede (nunca por e-mail ou chat), os dois arquivos com senhas:
+`painelAIO\config.env` e `painelcargaaio\config.env` (este traz o token do Gmail).
+
+Teste com a VPN ligada (os dois primeiros só simulam):
+
+```powershell
+cd C:\NamiDash\painelcargaaio; .venv\Scripts\python aio_pipeline.py --dry-run
+cd C:\NamiDash\painelAIO;      .venv\Scripts\python python\03_sync_referencia.py
+powershell -ExecutionPolicy Bypass -File C:\NamiDash\painelAIO\rodar_sync.ps1
+Get-Content $HOME\logs\painelaio_sync.log -Tail 15
+```
+
+Agende (dias úteis, 08:30 e 14:00; se o PC estiver desligado no horário, roda quando ligar):
+
+```powershell
+$acao = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\NamiDash\painelAIO\rodar_sync.ps1"'
+$dias = 'Monday','Tuesday','Wednesday','Thursday','Friday'
+$quando = @((New-ScheduledTaskTrigger -Weekly -DaysOfWeek $dias -At 08:30), (New-ScheduledTaskTrigger -Weekly -DaysOfWeek $dias -At 14:00))
+Register-ScheduledTask -TaskName 'painelAIO sync' -Action $acao -Trigger $quando -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable)
+```
+
+Para o notebook não parar:
+- Em **Energia**, com o carregador ligado, deixe "Suspender" em **Nunca**. Em "Ao fechar a tampa", escolha **Não fazer nada**.
+- Nas **Horas ativas** do Windows Update, inclua os horários da sincronização.
+- Deixe a sessão aberta (pode ficar com a tela bloqueada) e a **VPN** conectada. Sem a VPN, só o MCID fica sem atualizar.
+
+Quando o notebook estiver rodando, desligue o agendamento do Mac (o `rodar_sync.sh` manual continua funcionando):
+`launchctl bootout gui/$(id -u)/com.mcid.painelaio_sync`
+
+Para publicar o site a partir do Windows, rode `./publicar.sh "mensagem"` no **Git Bash**, que vem com o Git.
 
 ## Pré-visualização local (sem Supabase)
 
