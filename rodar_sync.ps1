@@ -3,6 +3,7 @@
 #   0) Gmail -> MCID: e-mails de AIO da GEPAC07 em se_cgpac.aio_solicitacoes
 #      (aio_pipeline.py do painelcargaaio; 7 dias para cobrir dias sem VPN)
 #   1) MCID -> Supabase: dados do SACI/TransfereGov usados na busca e no detalhe
+#   1b) AIOs da SNH que chegaram por e-mail viram AIOs no painel (08_aios_do_email.py)
 #   2) Supabase -> MCID: espelho do cadastro em se_cgpac.painelaio_*
 # Sem VPN, os scripts avisam e saem sem erro.
 # Agendado pelo Agendador de Tarefas (ver LEIAME, "Instalar no Windows").
@@ -31,5 +32,6 @@ function Rodar($Exe) { & $Exe @args 2>&1 | ForEach-Object { "$_" } }
   Atualizar $Carga
   Rodar $PyCarga "$Carga\aio_pipeline.py" --dias 7 | Select-String 'RESUMO|ERROR|Falha' | ForEach-Object Line
   Rodar $Py python\03_sync_referencia.py --commit
+  Rodar $Py python\08_aios_do_email.py --commit
   Rodar $Py python\04_espelhar_mcid.py --commit
 } | Out-File -Append -Encoding utf8 $Log

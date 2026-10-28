@@ -2,6 +2,11 @@
 
 Espelho de `docs/js/versoes.js` (botão "Versão" do painel). Ao publicar uma versão nova, atualize os dois e troque `?v=` no `docs/index.html`.
 
+## 1.4.0 — 28/10/2026
+- AIOs da SNH entram sozinhos: cada e-mail da Caixa (GEPAC07) vira um AIO no painel. Os que já têm a AIO emitida no TransfereGov entram como Concluído, na data de emissão; os demais, como Solicitado, na data do e-mail.
+- Quando o TransfereGov mostra a AIO emitida, o AIO criado pelo e-mail passa sozinho para Concluído.
+- O painel passa a carregar mais de 1.000 AIOs (antes parava em 1.000).
+
 ## 1.3.0 — 06/10/2026
 - Listas fixas no preenchimento: UF, secretaria, modalidade (agrupada por secretaria) e fase do PAC viram seletores; localização e status no SEI também, com a opção "Outro (digitar)…" para casos novos.
 - Referência da solicitação: caixas de marcar (Global Repasse, SPA Repasse, Licitação Repasse…) em vez de texto livre; o painel monta "Global Repasse = SPA Repasse" sozinho.

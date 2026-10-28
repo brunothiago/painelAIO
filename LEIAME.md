@@ -118,7 +118,7 @@ launchctl load ~/Library/LaunchAgents/com.mcid.painelaio_sync.plist
 ```
 
 - Roda `rodar_sync.sh` às 08:30 e às 14:00.
-- Primeiro lê os e-mails de AIO da GEPAC07 (`../painelcargaaio/aio_pipeline.py`, últimos 7 dias) para `se_cgpac.aio_solicitacoes`; depois leva tudo ao Supabase e atualiza o espelho.
+- Primeiro lê os e-mails de AIO da GEPAC07 (`../painelcargaaio/aio_pipeline.py`, últimos 7 dias) para `se_cgpac.aio_solicitacoes`; depois leva tudo ao Supabase, cria no painel os AIOs da SNH que chegaram por e-mail (`08_aios_do_email.py`) e atualiza o espelho.
 - O log fica em `~/logs/painelaio_sync.log`.
 - Sem VPN, o script avisa no log e sai sem erro.
 - O uso diário também evita que o Supabase gratuito entre em pausa, o que acontece depois de ~7 dias parado.
@@ -195,6 +195,7 @@ No modo prévia, as alterações ficam só na memória do navegador.
 | `python/01_seed_planilha.py` | Carga inicial da aba "AIOs a partir de julho de 2026" |
 | `python/02_importar_lista_caixa.py` | Importa listas da Caixa pelo terminal. Faz o mesmo que a aba do painel |
 | `python/03_sync_referencia.py` | MCID → Supabase (SACI, TransfereGov, e-mails GEPAC07) |
+| `python/08_aios_do_email.py` | AIOs da SNH recebidos por e-mail viram AIOs no painel (Concluído se já emitida no TGOV) |
 | `python/04_espelhar_mcid.py` | Supabase → MCID (`se_cgpac.painelaio_*`) |
 | `python/05_gerar_mock.py` | Dados da pré-visualização local |
 | `rodar_sync.sh`, `com.mcid.painelaio_sync.plist` | Sincronização agendada |

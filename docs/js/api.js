@@ -23,6 +23,15 @@ async function criarSupabase() {
     auth: { persistSession: true, autoRefreshToken: true },
   });
   const ok = ({ data, error }) => { if (error) throw error; return data; };
+  // O Supabase entrega no máximo 1000 linhas por consulta: lê em páginas até acabar.
+  const todas = async (consulta, lote = 1000) => {
+    const out = [];
+    for (let i = 0; ; i += lote) {
+      const parte = ok(await consulta().range(i, i + lote - 1));
+      out.push(...parte);
+      if (parte.length < lote) return out;
+    }
+  };
   let canal = null;
 
   return {
@@ -43,7 +52,7 @@ async function criarSupabase() {
       const [momentos, perfis, aios, sync] = await Promise.all([
         sb.from('momento').select('*').order('ordem').then(ok),
         sb.from('perfil').select('*').order('nome').then(ok),
-        sb.from('v_aio_painel').select('*').order('id').limit(5000).then(ok),
+        todas(() => sb.from('v_aio_painel').select('*').order('id')),
         sb.from('sync_log').select('*').order('em', { ascending: false }).limit(20).then(ok),
       ]);
       return { momentos, perfis, aios, sync };
@@ -54,7 +63,7 @@ async function criarSupabase() {
     atividade: (lim = 150) => sb.from('v_atividade').select('*').order('em', { ascending: false }).limit(lim).then(ok),
     listas: () => sb.from('v_caixa_listas').select('*').order('recebida_em', { ascending: false }).order('tabela').then(ok),
     fila: () => sb.from('v_caixa_sem_cadastro').select('*').order('recebida_em', { ascending: false }).limit(1000).then(ok),
-    contratosChaves: () => sb.from('contrato').select('id, nr_instrumento, nr_operacao').limit(10000).then(ok),
+    contratosChaves: () => todas(() => sb.from('contrato').select('id, nr_instrumento, nr_operacao').order('id')),
 
     async buscar(termo) {
       const palavras = limpaTermo(termo);
