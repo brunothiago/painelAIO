@@ -110,16 +110,19 @@ Todos os scripts **só simulam** sem `--commit`: mostram o que fariam e gravam u
 - O repositório `brunothiago/painelAIO` publica pelo GitHub Pages a partir da branch `main`, pasta `/docs`.
 - Para publicar: `./publicar.sh "mensagem"`. O script se recusa a publicar se houver chave secreta ou planilha no envio.
 
-### 4. Sincronização automática (2x por dia útil)
+### 4. Sincronização automática (todos os dias, 9h, 11h, 15h, 17h e 19h)
 
 ```bash
+launchctl bootout gui/$(id -u)/com.mcid.painelaio_sync 2>/dev/null   # tira a versão anterior, se houver
 cp com.mcid.painelaio_sync.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.mcid.painelaio_sync.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.mcid.painelaio_sync.plist
 ```
 
-- Roda `rodar_sync.sh` às 08:30 e às 14:00.
+- O agendamento chama `rodar_sync.py` com o Python do projeto (`.venv/bin/python3`). Não use o bash no agendamento: o macOS o bloqueia de ler a Área de Trabalho ("Operation not permitted").
+- À mão: `./rodar_sync.sh` (atalho para o mesmo `rodar_sync.py`).
+- Se o Mac estiver dormindo no horário, roda quando acordar.
 - Primeiro lê os e-mails de AIO da GEPAC07 (`../painelcargaaio/aio_pipeline.py`, últimos 7 dias) para `se_cgpac.aio_solicitacoes`; depois leva tudo ao Supabase, cria no painel os AIOs da SNH que chegaram por e-mail (`08_aios_do_email.py`) e atualiza o espelho.
-- O log fica em `~/logs/painelaio_sync.log`.
+- O log fica em `~/logs/painelaio_sync.log`; erros do próprio agendamento, em `~/logs/painelaio_sync.err`.
 - Sem VPN, o script avisa no log e sai sem erro.
 - O uso diário também evita que o Supabase gratuito entre em pausa, o que acontece depois de ~7 dias parado.
 
@@ -153,16 +156,15 @@ Teste com a VPN ligada (os dois primeiros só simulam):
 ```powershell
 cd C:\NamiDash\painelcargaaio; .venv\Scripts\python aio_pipeline.py --dry-run
 cd C:\NamiDash\painelAIO;      .venv\Scripts\python python\03_sync_referencia.py
-powershell -ExecutionPolicy Bypass -File C:\NamiDash\painelAIO\rodar_sync.ps1
+C:\NamiDash\painelAIO\.venv\Scripts\python C:\NamiDash\painelAIO\rodar_sync.py --git-pull
 Get-Content $HOME\logs\painelaio_sync.log -Tail 15
 ```
 
-Agende (dias úteis, 08:30 e 14:00; se o PC estiver desligado no horário, roda quando ligar):
+Agende (todos os dias, 9h, 11h, 15h, 17h e 19h; se o PC estiver desligado no horário, roda quando ligar):
 
 ```powershell
-$acao = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "C:\NamiDash\painelAIO\rodar_sync.ps1"'
-$dias = 'Monday','Tuesday','Wednesday','Thursday','Friday'
-$quando = @((New-ScheduledTaskTrigger -Weekly -DaysOfWeek $dias -At 08:30), (New-ScheduledTaskTrigger -Weekly -DaysOfWeek $dias -At 14:00))
+$acao = New-ScheduledTaskAction -Execute 'C:\NamiDash\painelAIO\.venv\Scripts\pythonw.exe' -Argument 'rodar_sync.py --git-pull' -WorkingDirectory 'C:\NamiDash\painelAIO'
+$quando = '09:00','11:00','15:00','17:00','19:00' | ForEach-Object { New-ScheduledTaskTrigger -Daily -At $_ }
 Register-ScheduledTask -TaskName 'painelAIO sync' -Action $acao -Trigger $quando -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable)
 ```
 
@@ -198,7 +200,7 @@ No modo prévia, as alterações ficam só na memória do navegador.
 | `python/08_aios_do_email.py` | AIOs da SNH recebidos por e-mail viram AIOs no painel (Concluído se já emitida no TGOV) |
 | `python/04_espelhar_mcid.py` | Supabase → MCID (`se_cgpac.painelaio_*`) |
 | `python/05_gerar_mock.py` | Dados da pré-visualização local |
-| `rodar_sync.sh`, `com.mcid.painelaio_sync.plist` | Sincronização agendada |
+| `rodar_sync.py` (atalho `rodar_sync.sh`), `com.mcid.painelaio_sync.plist` | Sincronização agendada (Mac e Windows) |
 | `publicar.sh` | Publica `docs/` com as verificações de segurança |
 
 ## Segurança

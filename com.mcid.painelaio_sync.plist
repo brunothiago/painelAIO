@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Agenda o rodar_sync.sh às 08:30 e às 14:00 (seg a sex).
-     Instalar:  cp com.mcid.painelaio_sync.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/com.mcid.painelaio_sync.plist
-     Ajuste o caminho abaixo se a pasta do projeto mudar de lugar. -->
 <plist version="1.0">
 <dict>
-  <key>Label</key><string>com.mcid.painelaio_sync</string>
+  <key>Label</key>
+  <string>com.mcid.painelaio_sync</string>
+  <!-- Chama o Python do projeto direto: o macOS bloqueia o bash de ler a Área de Trabalho -->
   <key>ProgramArguments</key>
   <array>
-    <string>/bin/bash</string>
-    <string>/Users/thiagobruno/Desktop/05_GrandLine/NamiDash/painelAIO/rodar_sync.sh</string>
+    <string>/Users/thiagobruno/Desktop/05_GrandLine/NamiDash/painelAIO/.venv/bin/python3</string>
+    <string>/Users/thiagobruno/Desktop/05_GrandLine/NamiDash/painelAIO/rodar_sync.py</string>
   </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/thiagobruno/Desktop/05_GrandLine/NamiDash/painelAIO</string>
+  <!-- Todos os dias às 9h, 11h, 15h, 17h e 19h; se o Mac estiver dormindo, roda ao acordar -->
   <key>StartCalendarInterval</key>
   <array>
-    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
-    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
-    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
-    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
-    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
-    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>14</integer><key>Minute</key><integer>0</integer></dict>
-    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>14</integer><key>Minute</key><integer>0</integer></dict>
-    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>14</integer><key>Minute</key><integer>0</integer></dict>
-    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>14</integer><key>Minute</key><integer>0</integer></dict>
-    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>14</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>0</integer></dict>
   </array>
-  <key>StandardErrorPath</key><string>/tmp/painelaio_sync.err</string>
+  <key>StandardOutPath</key>
+  <string>/Users/thiagobruno/logs/painelaio_sync.err</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/thiagobruno/logs/painelaio_sync.err</string>
 </dict>
 </plist>
