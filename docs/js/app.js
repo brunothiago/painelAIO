@@ -397,6 +397,19 @@ function renderRodape() {
   render('#rodape', html`Painel AIO · MCID/SE/DMP/CGPAC ·
     ${ref ? html`dados do SACI/TransfereGov atualizados em ${fmtDataHora(ref.em)}` : 'dados do SACI/TransfereGov ainda não sincronizados'}
     ${E.api?.modo === 'mock' ? html` · <b>prévia local: alterações não são gravadas</b>` : ''}`);
+  renderAtualizacao(ult);
+}
+
+// Topo: quando os e-mails da Caixa chegaram ao painel (03, que lê os e-mails no MCID)
+// e quando a carga completa terminou (04, último passo do rodar_sync). Laranja se tem mais de 24 h.
+function renderAtualizacao(ult) {
+  const email = ult('03_sync_referencia');
+  const carga = ult('04_espelhar_mcid');
+  const velho = (s) => !s || Date.now() - new Date(s.em) > 24 * 3600e3;
+  const ultimoEmail = email?.detalhe?.ultimo_email;
+  render('#atualizacao', html`
+    <span class="${velho(email) ? 'velho' : ''}" title="${ultimoEmail ? `Último e-mail da Caixa (GEPAC07): ${fmtDataHora(ultimoEmail)}` : ''}">E-mails: <b>${email ? fmtDataHora(email.em) : '—'}</b></span>
+    <span class="${velho(carga) ? 'velho' : ''}" title="Sincronização completa: e-mails, SACI/TransfereGov e espelho no MCID">Carga completa: <b>${carga ? fmtDataHora(carga.em) : '—'}</b></span>`);
 }
 
 initCaixa();

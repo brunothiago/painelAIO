@@ -53,7 +53,7 @@ async function criarSupabase() {
         sb.from('momento').select('*').order('ordem').then(ok),
         sb.from('perfil').select('*').order('nome').then(ok),
         todas(() => sb.from('v_aio_painel').select('*').order('id')),
-        sb.from('sync_log').select('*').order('em', { ascending: false }).limit(20).then(ok),
+        sb.from('sync_log').select('*').order('em', { ascending: false }).limit(50).then(ok),
       ]);
       return { momentos, perfis, aios, sync };
     },

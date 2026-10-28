@@ -114,6 +114,8 @@ def main():
                 r["dt_aio_recebido_email"] = dt
                 r["fontes"] = r["fontes"] + ["gepac07"]
         print(f"E-mails GEPAC07 (aio_solicitacoes): {n_email} instrumentos")
+        cur.execute(f"select max(data_aio_recebido), max(criado_em) from {schema_mcid()}.aio_solicitacoes")
+        ultimo_email, email_importado = cur.fetchone()
 
     faltam = [k for k in cadastrados if k not in refs]
     if faltam:
@@ -131,7 +133,8 @@ def main():
     linhas = list(refs.values())
     sb.upsert("referencia", linhas, on_conflict="nr_instrumento")
     sb.log("03_sync_referencia", "mcid->supabase", len(linhas),
-           detalhe={"tgov": n_tgov, "email": n_email, "sem_saci": len(faltam)})
+           detalhe={"tgov": n_tgov, "email": n_email, "sem_saci": len(faltam),
+                    "ultimo_email": ultimo_email, "email_importado": email_importado})
     print(f"\nGravado: {len(linhas)} referências.")
 
 

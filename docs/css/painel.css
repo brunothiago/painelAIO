@@ -60,6 +60,9 @@ header.topo{display:flex;align-items:flex-end;justify-content:space-between;gap:
 .topo-dir{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .selo{background:var(--azul-escuro);color:#fff;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;
   letter-spacing:.4px;border:none;cursor:pointer;text-transform:uppercase}
+.atualizacao{display:inline-flex;gap:10px;flex-wrap:wrap;font-size:.78rem;color:var(--cinza-texto)}
+.atualizacao b{color:var(--azul-escuro);font-weight:700}
+.atualizacao .velho b{color:var(--laranja)}
 .vivo{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--cinza-texto)}
 .vivo i{width:9px;height:9px;border-radius:50%;background:var(--cinza-circulo);display:inline-block}
 .vivo.on i{background:var(--verde);box-shadow:0 0 0 3px rgba(22,136,33,.18)}

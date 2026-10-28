@@ -10,6 +10,7 @@ Para cada instrumento com e-mail e sem nenhum AIO no painel (nem excluído):
   - ainda não emitida       -> entra como SOLICITADO, na data do e-mail
 Os AIOs criados por este script que ainda estão em SOLICITADO passam para
 CONCLUIDO quando o TGOV mostrar a AIO emitida. Os demais AIOs não são tocados.
+Responsável: RESPONSAVEL_<SECRETARIA> do config.env (ex. RESPONSAVEL_SNH), se houver.
 
 Uso:
     python3 python/08_aios_do_email.py                     # simulação
@@ -22,7 +23,7 @@ import collections
 import datetime
 import sys
 
-from comum import ErroSupabase, SupabaseREST, salvar_csv
+from comum import ErroSupabase, SupabaseREST, cfg, salvar_csv
 
 AUTOR = "e-mail GEPAC07"
 
@@ -77,6 +78,7 @@ def main():
                 },
                 "aio": {
                     "etapas": [], "tipo": "EMISSAO", "momento": momento, "momento_desde": desde,
+                    "responsavel": cfg(f"RESPONSAVEL_{r['secretaria']}"),
                     "dt_solicitacao_caixa": dt_email, "dt_conclusao": desde if emitida else None,
                     "valor_solicitado": r["valor_repasse"], "tgov": r["tgov"], "obs": obs,
                 },

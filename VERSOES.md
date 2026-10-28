@@ -2,6 +2,10 @@
 
 Espelho de `docs/js/versoes.js` (botão "Versão" do painel). Ao publicar uma versão nova, atualize os dois e troque `?v=` no `docs/index.html`.
 
+## 1.4.1 — 28/10/2026
+- No topo do painel: horário em que os e-mails da Caixa chegaram ao painel e horário da última carga completa (fica laranja se passar de 24 h). Passe o mouse em "E-mails" para ver quando chegou o último e-mail da GEPAC07.
+- AIOs da SNH com Vitor Bastos como responsável, inclusive os que chegarem por e-mail daqui em diante.
+
 ## 1.4.0 — 28/10/2026
 - AIOs da SNH entram sozinhos: cada e-mail da Caixa (GEPAC07) vira um AIO no painel. Os que já têm a AIO emitida no TransfereGov entram como Concluído, na data de emissão; os demais, como Solicitado, na data do e-mail.
 - Quando o TransfereGov mostra a AIO emitida, o AIO criado pelo e-mail passa sozinho para Concluído.
