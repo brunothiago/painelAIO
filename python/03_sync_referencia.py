@@ -10,6 +10,9 @@ Fontes:
   mcid_transferegov.tab_convenios          -> está no TGOV, saldo em conta
   mcid_transferegov.tab_inst_cont_proposta_aio_modulo_empresas
                                            -> situação e data de emissão da AIO no TGOV
+      Quem não tem acesso ao mcid_transferegov lê a cópia se_cgpac.painelaio_tgov_aio
+      (visão materializada criada pelo 04_espelhar_mcid.py). Quem tem acesso lê direto e,
+      com --commit, atualiza essa cópia (se for o dono dela).
   se_cgpac.aio_solicitacoes                -> data em que o e-mail da Caixa (GEPAC07) chegou
 
 Entram todos os instrumentos PAC do SACI e os que já estão cadastrados no painel.
@@ -35,6 +38,22 @@ select distinct on (trim(num_convenio))
    and (bln_pac = 'SIM' or trim(num_convenio) = any (%s))
  order by trim(num_convenio), (bln_carteira_ativa_mcid = 'SIM') desc, dte_carga desc nulls last
 """
+
+SQL_TGOV_VISAO = """
+select num_convenio, vlr_saldo_conta, dte_emissao_aio, situacao_aio
+  from {schema}.painelaio_tgov_aio
+ where num_convenio = any (%s)
+"""
+
+
+def _tgov_direto(cur):
+    """O usuário lê o mcid_transferegov? (testa o schema antes: sem USAGE, o teste da tabela dá erro)"""
+    cur.execute("select has_schema_privilege('mcid_transferegov', 'USAGE')")
+    if not cur.fetchone()[0]:
+        return False
+    cur.execute("select has_table_privilege('mcid_transferegov.tab_convenios', 'SELECT') and "
+                "has_table_privilege('mcid_transferegov.tab_inst_cont_proposta_aio_modulo_empresas', 'SELECT')")
+    return cur.fetchone()[0]
 
 SQL_TGOV = """
 select trim(c.num_convenio), max(c.vlr_saldo_conta),
@@ -93,9 +112,32 @@ def main():
             }
         print(f"SACI: {len(refs)} instrumentos")
 
-        cur.execute(SQL_TGOV, (list(refs),))
+        from comum import schema_mcid
+        visao = f"{schema_mcid()}.painelaio_tgov_aio"
+        cur.execute("select pg_get_userbyid(relowner) = current_user from pg_class where oid = to_regclass(%s)",
+                    (visao,))
+        r = cur.fetchone()
+        tem_visao, dono_visao = r is not None, bool(r and r[0])
+        if _tgov_direto(cur):
+            cur.execute(SQL_TGOV, (list(refs),))
+            linhas_tgov = cur.fetchall()
+            if dono_visao and args.commit:
+                cur.execute(f"refresh materialized view {visao}")
+                print(f"Cópia {visao} atualizada (lida por quem não tem acesso ao TransfereGov)")
+        elif tem_visao:
+            cur.execute(f"select to_char(max(atualizado_em), 'DD/MM/YYYY HH24:MI') from {visao}")
+            print(f"TransfereGov lido da cópia {visao}, atualizada em {cur.fetchone()[0]}")
+            cur.execute(SQL_TGOV_VISAO.format(schema=schema_mcid()), (list(refs),))
+            linhas_tgov = cur.fetchall()
+        else:
+            # sem TGOV, gravar apagaria no painel a data de emissão e o saldo: melhor parar
+            print(f"Sem acesso ao mcid_transferegov e sem a cópia {visao}. Nada foi gravado.\n"
+                  f"Peça ao dono do {schema_mcid()} para rodar: 04_espelhar_mcid.py --liberar SEU_USUARIO")
+            if sb:
+                sb.log("03_sync_referencia", "mcid->supabase", 0, ok=False, detalhe={"erro": "sem acesso ao TGOV"})
+            return 1
         n_tgov = 0
-        for conv, saldo, dt_aio, sit in cur.fetchall():
+        for conv, saldo, dt_aio, sit in linhas_tgov:
             r = refs.get(norm_instrumento(conv))
             if r:
                 n_tgov += 1
@@ -104,7 +146,6 @@ def main():
         print(f"TransfereGov: {n_tgov} com convênio; "
               f"{sum(1 for r in refs.values() if r['dt_emissao_aio_tgov'])} com AIO emitida")
 
-        from comum import schema_mcid
         cur.execute(SQL_EMAIL.format(schema=schema_mcid()))
         n_email = 0
         for k, dt in cur.fetchall():

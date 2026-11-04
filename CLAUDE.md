@@ -9,6 +9,7 @@ Painel AIO (`painelAIO`): painel ao vivo em que a equipe da MCID/SE/DMP/CGPAC ca
   - O banco MCID é acessado com psycopg2.
   - O Supabase é acessado por HTTPS/PostgREST com a secret key. Não use a porta 5432, que pode estar bloqueada na rede do ministério.
   - Todo script só simula por padrão; `--commit` grava.
+  - **TransfereGov para quem não tem acesso** (ex.: `pedro.araujo`): `se_cgpac.painelaio_tgov_aio` é uma visão materializada (4 colunas, só convênios da carteira SACI). O 03 de quem lê `mcid_transferegov` lê direto e, com `--commit`, faz o refresh dela, se for o dono. O 03 de quem não lê usa a cópia. `04_espelhar_mcid.py --liberar USUARIO` (rodado pelo dono) cria a cópia e libera as permissões. O 04 só roda `alter table` quando falta coluna, porque outro usuário não é dono das tabelas.
 
 ## Convenções importantes
 - **Escapar sempre.** Monte HTML com o template `html\`\`` de `docs/js/util.js`, que escapa as interpolações. Use `raw()` só para marcação fixa. Nunca coloque dado do banco em `innerHTML` sem escapar.

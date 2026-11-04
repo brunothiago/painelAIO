@@ -10,10 +10,16 @@ no schema se_cgpac (não mexe em aio_solicitacoes):
 Serve de cópia institucional (e backup) e permite cruzar o controle de AIO com
 as outras bases do MCID em SQL. O histórico só recebe linhas novas.
 
+Também cria a visão materializada se_cgpac.painelaio_tgov_aio: AIO emitida, situação e
+saldo do TransfereGov, só dos convênios da carteira SACI. Serve para quem não tem acesso
+ao mcid_transferegov (ex.: pedro.araujo) também sincronizar: o 03_sync_referencia.py dele
+lê a visão. Quem tem acesso lê direto e, com --commit, atualiza a visão (só o dono consegue).
+
 Uso (precisa da VPN):
-    python3 python/04_espelhar_mcid.py --criar-tabelas   # 1ª vez: cria as tabelas no se_cgpac
+    python3 python/04_espelhar_mcid.py --criar-tabelas   # 1ª vez: cria as tabelas e a visão no se_cgpac
     python3 python/04_espelhar_mcid.py                   # dry-run: mostra o que mudaria
     python3 python/04_espelhar_mcid.py --commit          # grava
+    python3 python/04_espelhar_mcid.py --liberar pedro.araujo   # dono: deixa outro usuário rodar a sincronização
 """
 
 import argparse
@@ -56,6 +62,41 @@ LOG_DDL = """create table if not exists {s}.painelaio_sync_log (
     id bigserial primary key, em timestamptz default now(), tabela text, inseridas int,
     atualizadas int, ok boolean, detalhe jsonb)"""
 
+# Só as 4 colunas que o 03 usa, só dos convênios da carteira SACI (que o 03 já lê).
+# atualizado_em = hora do último refresh (o 03 do dono faz o refresh a cada rodada).
+TGOV_VIEW_DDL = """create materialized view if not exists {s}.painelaio_tgov_aio as
+select trim(c.num_convenio) as num_convenio,
+       max(c.vlr_saldo_conta) as vlr_saldo_conta,
+       max(a.dte_emissao_aio_instrumento_contratual)
+         filter (where a.dsc_situacao_aio_instrumento_contratual ilike 'emitida') as dte_emissao_aio,
+       string_agg(distinct trim(a.dsc_situacao_aio_instrumento_contratual), ', ') as situacao_aio,
+       now() as atualizado_em
+  from mcid_transferegov.tab_convenios c
+  left join mcid_transferegov.tab_inst_cont_proposta_aio_modulo_empresas a on a.cod_proposta = c.cod_proposta
+ where trim(c.num_convenio) in (select trim(num_convenio) from se_saci.view_mat_carteira_investimento)
+ group by 1"""
+
+
+def criar_visao(cur, s):
+    cur.execute("select relkind from pg_class where oid = to_regclass(%s)", (f"{s}.painelaio_tgov_aio",))
+    r = cur.fetchone()
+    if r and r[0] == "v":  # versão anterior era visão comum
+        cur.execute(f"drop view {s}.painelaio_tgov_aio")
+    cur.execute(TGOV_VIEW_DDL.format(s=s))
+    cur.execute(f"comment on materialized view {s}.painelaio_tgov_aio is 'painelAIO: AIO emitida, situação "
+                f"e saldo do TransfereGov por convênio (carteira SACI). Atualizada pelo 03_sync_referencia.py "
+                f"do dono; lida por quem sincroniza sem acesso ao mcid_transferegov.'")
+
+
+def liberar(cur, s, usuario):
+    """Dá a outro usuário do MCID o necessário para rodar a sincronização (só o dono consegue)."""
+    if not re.fullmatch(r"[a-z0-9_.]+", usuario):
+        raise SystemExit(f"usuário inválido: {usuario!r}")
+    tabs = ", ".join(f"{s}.{t}" for t, _, _ in TABELAS.values())
+    cur.execute(f'grant select on {s}.painelaio_tgov_aio to "{usuario}"')
+    cur.execute(f'grant select, insert, update on {s}.aio_solicitacoes, {tabs}, {s}.painelaio_sync_log to "{usuario}"')
+    cur.execute(f'grant usage on sequence {s}.aio_solicitacoes_id_seq, {s}.painelaio_sync_log_id_seq to "{usuario}"')
+
 
 def colunas(ddl):
     """Nomes das colunas do DDL (ignora vírgulas dentro de parênteses, ex. numeric(15,2))."""
@@ -66,6 +107,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--criar-tabelas", action="store_true")
     ap.add_argument("--commit", action="store_true")
+    ap.add_argument("--liberar", metavar="USUARIO_MCID",
+                    help="dá a esse usuário do MCID o acesso para rodar a sincronização e sai")
     args = ap.parse_args()
     s = schema_mcid()
 
@@ -75,25 +118,37 @@ def main():
         print(f"Sem conexão com o banco MCID (VPN desligada?): {str(e).splitlines()[0]}")
         return
 
+    if args.liberar:
+        with conn, conn.cursor() as cur:
+            criar_visao(cur, s)
+            liberar(cur, s, args.liberar)
+        print(f"{args.liberar} já pode rodar a sincronização (visão {s}.painelaio_tgov_aio e tabelas {s}.painelaio_*).")
+        return
+
     if args.criar_tabelas:
         with conn, conn.cursor() as cur:
             for _, (tab, ddl, _) in TABELAS.items():
                 cur.execute(f"create table if not exists {s}.{tab} ({ddl})")
             cur.execute(LOG_DDL.format(s=s))
-        print(f"Tabelas {s}.painelaio_* prontas.")
+            criar_visao(cur, s)
+        print(f"Tabelas {s}.painelaio_* e visão {s}.painelaio_tgov_aio prontas.")
         if not args.commit:
             return
 
     from psycopg2.extras import Json, execute_values
 
-    # colunas novas do painel entram no espelho sem precisar recriar as tabelas
+    # colunas novas do painel entram no espelho sem precisar recriar as tabelas.
+    # Só altera quando falta coluna: alter table exige ser o dono, e quem só tem
+    # insert/update (outro usuário rodando a sincronização) não pode.
     with conn, conn.cursor() as cur:
         for _, (tab, ddl, _) in TABELAS.items():
-            cur.execute("select 1 from information_schema.tables where table_schema=%s and table_name=%s", (s, tab))
-            if cur.fetchone():
+            cur.execute("select column_name from information_schema.columns where table_schema=%s and table_name=%s",
+                        (s, tab))
+            existentes = {r[0] for r in cur.fetchall()}
+            if existentes:
                 for col in re.split(r",(?![^()]*\))", ddl):
                     col = col.strip()
-                    if col and "primary key" not in col:
+                    if col and "primary key" not in col and col.split()[0] not in existentes:
                         cur.execute(f"alter table {s}.{tab} add column if not exists {col}")
 
     sb = SupabaseREST()
